@@ -14,7 +14,7 @@
 
 .my-name h2 {
   margin: 0;
-  color: #1b548c;
+  color: #cfaa13;
   font-size: 1.4rem;
 }
 </style>
