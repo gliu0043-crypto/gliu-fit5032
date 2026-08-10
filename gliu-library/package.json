@@ -13,6 +13,7 @@
     "format": "oxfmt src/"
   },
   "dependencies": {
+    "bootstrap": "^5.3.8",
     "vue": "^3.5.40"
   },
   "devDependencies": {
