@@ -4,17 +4,22 @@
       <div class="col-12 col-md-8 offset-md-2">
         <h1 class="text-center">User Information Form</h1>
 
-        <form @submit.prevent="submitForm">
+        <form @submit.prevent="submitForm" novalidate>
           <div class="row mb-3">
             <div class="col-12 col-md-6 mb-3 mb-md-0">
               <label for="username" class="form-label">Username</label>
               <input
                 type="text"
                 class="form-control"
+                :class="{ 'is-invalid': errors.username }"
                 id="username"
-                required
+                @blur="() => validateName(true)"
+                @input="() => validateName(false)"
                 v-model="formData.username"
               >
+              <div v-if="errors.username" class="text-danger small mt-1">
+                {{ errors.username }}
+              </div>
             </div>
 
             <div class="col-12 col-md-6">
@@ -22,12 +27,15 @@
               <input
                 type="password"
                 class="form-control"
+                :class="{ 'is-invalid': errors.password }"
                 id="password"
-                required
-                minlength="4"
-                maxlength="10"
+                @blur="() => validatePassword(true)"
+                @input="() => validatePassword(false)"
                 v-model="formData.password"
               >
+              <div v-if="errors.password" class="text-danger small mt-1">
+                {{ errors.password }}
+              </div>
             </div>
           </div>
 
@@ -37,13 +45,17 @@
                 <input
                   type="checkbox"
                   class="form-check-input"
+                  :class="{ 'is-invalid': errors.resident }"
                   id="isAustralian"
-                  required
+                  @change="() => validateResident(true)"
                   v-model="formData.isAustralian"
                 >
                 <label class="form-check-label" for="isAustralian">
                   Australian Resident?
                 </label>
+              </div>
+              <div v-if="errors.resident" class="text-danger small mt-1">
+                {{ errors.resident }}
               </div>
             </div>
 
@@ -51,8 +63,10 @@
               <label for="gender" class="form-label">Gender</label>
               <select
                 class="form-select"
+                :class="{ 'is-invalid': errors.gender }"
                 id="gender"
-                required
+                @blur="() => validateGender(true)"
+                @change="() => validateGender(false)"
                 v-model="formData.gender"
               >
                 <option value="" disabled>Select gender</option>
@@ -60,6 +74,9 @@
                 <option value="female">Female</option>
                 <option value="other">Other</option>
               </select>
+              <div v-if="errors.gender" class="text-danger small mt-1">
+                {{ errors.gender }}
+              </div>
             </div>
           </div>
 
@@ -67,12 +84,16 @@
             <label for="reason" class="form-label">Reason for joining</label>
             <textarea
               class="form-control"
+              :class="{ 'is-invalid': errors.reason }"
               id="reason"
               rows="3"
-              required
-              minlength="10"
+              @blur="() => validateReason(true)"
+              @input="() => validateReason(false)"
               v-model="formData.reason"
             ></textarea>
+            <div v-if="errors.reason" class="text-danger small mt-1">
+              {{ errors.reason }}
+            </div>
           </div>
 
           <div class="text-center">
@@ -111,9 +132,9 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 
-const formData = reactive({
+const formData = ref({
   username: '',
   password: '',
   isAustralian: false,
@@ -123,22 +144,112 @@ const formData = reactive({
 
 const submittedCards = ref([])
 
+const errors = ref({
+  username: null,
+  password: null,
+  resident: null,
+  gender: null,
+  reason: null,
+})
+
+const validateName = (blur) => {
+  if (formData.value.username.length < 3) {
+    if (blur) errors.value.username = 'Name must be at least 3 characters'
+  } else {
+    errors.value.username = null
+  }
+}
+
+const validatePassword = (blur) => {
+  const password = formData.value.password
+  const minLength = 8
+  const hasUppercase = /[A-Z]/.test(password)
+  const hasLowercase = /[a-z]/.test(password)
+  const hasNumber = /\d/.test(password)
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+
+  if (password.length < minLength) {
+    if (blur) errors.value.password = `Password must be at least ${minLength} characters long.`
+  } else if (!hasUppercase) {
+    if (blur) errors.value.password = 'Password must contain at least one uppercase letter.'
+  } else if (!hasLowercase) {
+    if (blur) errors.value.password = 'Password must contain at least one lowercase letter.'
+  } else if (!hasNumber) {
+    if (blur) errors.value.password = 'Password must contain at least one number.'
+  } else if (!hasSpecialChar) {
+    if (blur) errors.value.password = 'Password must contain at least one special character.'
+  } else {
+    errors.value.password = null
+  }
+}
+
+const validateResident = (blur) => {
+  if (!formData.value.isAustralian) {
+    if (blur) errors.value.resident = 'Please confirm Australian residency.'
+  } else {
+    errors.value.resident = null
+  }
+}
+
+const validateGender = (blur) => {
+  if (!formData.value.gender) {
+    if (blur) errors.value.gender = 'Please select a gender.'
+  } else {
+    errors.value.gender = null
+  }
+}
+
+const validateReason = (blur) => {
+  if (formData.value.reason.trim().length < 10) {
+    if (blur) errors.value.reason = 'Reason must be at least 10 characters.'
+  } else {
+    errors.value.reason = null
+  }
+}
+
 const submitForm = () => {
+  validateName(true)
+  validatePassword(true)
+  validateResident(true)
+  validateGender(true)
+  validateReason(true)
+
+  if (
+    errors.value.username ||
+    errors.value.password ||
+    errors.value.resident ||
+    errors.value.gender ||
+    errors.value.reason
+  ) {
+    return
+  }
+
   submittedCards.value.push({
-    username: formData.username,
-    password: formData.password,
-    isAustralian: formData.isAustralian,
-    gender: formData.gender,
-    reason: formData.reason,
+    username: formData.value.username,
+    password: formData.value.password,
+    isAustralian: formData.value.isAustralian,
+    gender: formData.value.gender,
+    reason: formData.value.reason,
   })
+  clearForm()
 }
 
 const clearForm = () => {
-  formData.username = ''
-  formData.password = ''
-  formData.isAustralian = false
-  formData.gender = ''
-  formData.reason = ''
+  formData.value = {
+    username: '',
+    password: '',
+    isAustralian: false,
+    gender: '',
+    reason: '',
+  }
+
+  errors.value = {
+    username: null,
+    password: null,
+    resident: null,
+    gender: null,
+    reason: null,
+  }
 }
 </script>
 
