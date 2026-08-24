@@ -1,5 +1,20 @@
-# Vue 3 + Vite
+# GreenMelbourne Connect
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+GreenMelbourne Connect is a Vue 3 web application for a Melbourne-based environmental not-for-profit focused on urban greening, community tree planting, and local biodiversity.
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+## Current Version
+
+This version establishes the basic application structure for event discovery. It includes a responsive single-page layout, event data rendered from a JavaScript data structure, search and filter controls for activities, and a participation section that will later support event registration.
+
+## Project Setup
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+```

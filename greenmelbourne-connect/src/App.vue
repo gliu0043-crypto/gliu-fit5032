@@ -1,10 +1,12 @@
 <script setup>
+import { computed, ref } from 'vue'
+
 const events = [
   {
     id: 1,
     title: 'Clayton Community Tree Planting Day',
     suburb: 'Clayton',
-    date: 'Saturday 22 August 2026',
+    date: 'Saturday 29 August 2026',
     type: 'Tree planting',
     places: 18,
     description: 'A beginner-friendly planting session with tools and guidance provided.',
@@ -28,6 +30,41 @@ const events = [
     description: 'Learn simple ways to support native plants, insects, and birds at home.',
   },
 ]
+
+const searchText = ref('')
+const selectedType = ref('All')
+const selectedSuburb = ref('All')
+
+const activityTypes = computed(() => ['All', ...new Set(events.map((event) => event.type))])
+const suburbs = computed(() => ['All', ...new Set(events.map((event) => event.suburb))])
+
+const filteredEvents = computed(() => {
+  const search = searchText.value.trim().toLowerCase()
+
+  return events.filter((event) => {
+    const searchableText = `${event.title} ${event.suburb} ${event.type} ${event.description}`.toLowerCase()
+    const matchesSearch = searchableText.includes(search)
+    const matchesType = selectedType.value === 'All' || event.type === selectedType.value
+    const matchesSuburb = selectedSuburb.value === 'All' || event.suburb === selectedSuburb.value
+
+    return matchesSearch && matchesType && matchesSuburb
+  })
+})
+
+const resultSummary = computed(() => {
+  const count = filteredEvents.value.length
+  return `${count} ${count === 1 ? 'activity' : 'activities'} found`
+})
+
+const hasActiveFilters = computed(
+  () => searchText.value.trim() !== '' || selectedType.value !== 'All' || selectedSuburb.value !== 'All',
+)
+
+const clearFilters = () => {
+  searchText.value = ''
+  selectedType.value = 'All'
+  selectedSuburb.value = 'All'
+}
 </script>
 
 <template>
@@ -86,8 +123,56 @@ const events = [
             </p>
           </div>
 
-          <div class="row g-4">
-            <div v-for="event in events" :key="event.id" class="col-12 col-md-6 col-xl-4">
+          <form class="filter-panel" @submit.prevent>
+            <div class="row g-3 align-items-end">
+              <div class="col-12 col-lg-5">
+                <label class="form-label" for="event-search">Search activities</label>
+                <input
+                  id="event-search"
+                  v-model="searchText"
+                  class="form-control form-control-lg"
+                  type="search"
+                  placeholder="Search by suburb, title, or activity"
+                >
+              </div>
+
+              <div class="col-12 col-sm-6 col-lg-3">
+                <label class="form-label" for="activity-type">Activity type</label>
+                <select id="activity-type" v-model="selectedType" class="form-select form-select-lg">
+                  <option v-for="type in activityTypes" :key="type" :value="type">
+                    {{ type === 'All' ? 'All activities' : type }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="col-12 col-sm-6 col-lg-2">
+                <label class="form-label" for="activity-suburb">Suburb</label>
+                <select id="activity-suburb" v-model="selectedSuburb" class="form-select form-select-lg">
+                  <option v-for="suburb in suburbs" :key="suburb" :value="suburb">
+                    {{ suburb === 'All' ? 'All suburbs' : suburb }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="col-12 col-lg-2">
+                <button
+                  class="btn btn-outline-success btn-lg w-100"
+                  type="button"
+                  :disabled="!hasActiveFilters"
+                  @click="clearFilters"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <div class="results-bar">
+            <p>{{ resultSummary }}</p>
+          </div>
+
+          <div v-if="filteredEvents.length > 0" class="row g-4">
+            <div v-for="event in filteredEvents" :key="event.id" class="col-12 col-md-6 col-xl-4">
               <article class="event-card h-100">
                 <div class="event-card-body">
                   <span class="event-type">{{ event.type }}</span>
@@ -110,6 +195,12 @@ const events = [
                 </div>
               </article>
             </div>
+          </div>
+
+          <div v-else class="empty-state">
+            <h3>No activities match your search.</h3>
+            <p>Try changing the suburb, activity type, or search keywords.</p>
+            <button class="btn btn-success" type="button" @click="clearFilters">Show all activities</button>
           </div>
         </div>
       </section>
