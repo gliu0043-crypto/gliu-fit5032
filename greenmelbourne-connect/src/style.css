@@ -101,7 +101,9 @@ p {
 }
 
 .impact-panel,
-.next-step-box,
+.registration-form,
+.registrations-panel,
+.registration-card,
 .event-card {
   border: 1px solid rgba(31, 41, 51, 0.1);
   border-radius: 8px;
@@ -276,27 +278,63 @@ p {
   background: #edf6f0;
 }
 
-.next-step-box {
+.registration-form,
+.registrations-panel {
   padding: 1.5rem;
 }
 
-.next-step-box h3 {
+.registration-form h3,
+.registrations-panel h3 {
   color: #173f2f;
   font-size: 1.3rem;
   font-weight: 800;
+  margin-bottom: 1.25rem;
 }
 
-.next-step-box ul {
-  display: grid;
-  gap: 0.7rem;
-  margin: 1rem 0 0;
-  padding-left: 1.25rem;
+.registration-form .form-label {
+  color: #263241;
+  font-weight: 750;
 }
 
-.next-step-box code {
-  border-radius: 4px;
-  background: #e6e8ea;
-  padding: 0.1rem 0.3rem;
+.registration-form .form-control,
+.registration-form .form-select {
+  border-color: rgba(31, 41, 51, 0.16);
+  color: #263241;
+}
+
+.registration-form .form-control:focus,
+.registration-form .form-select:focus {
+  border-color: #216e4e;
+  box-shadow: 0 0 0 0.2rem rgba(33, 110, 78, 0.18);
+}
+
+.form-hint {
+  color: #6c7583;
+  font-size: 0.86rem;
+  margin-top: 0.35rem;
+}
+
+.registrations-panel {
+  margin-top: 2rem;
+}
+
+.registration-card {
+  height: 100%;
+  padding: 1.25rem;
+}
+
+.registration-card h4 {
+  color: #173f2f;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 0.45rem;
+}
+
+.registration-card p {
+  color: #5d6675;
+  line-height: 1.6;
+  margin-bottom: 0;
 }
 
 .site-footer {
@@ -318,7 +356,9 @@ p {
   .impact-panel,
   .filter-panel,
   .empty-state,
-  .next-step-box,
+  .registration-form,
+  .registrations-panel,
+  .registration-card,
   .event-card-body {
     padding: 1.2rem;
   }

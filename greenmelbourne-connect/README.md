@@ -4,7 +4,7 @@ GreenMelbourne Connect is a Vue 3 web application for a Melbourne-based environm
 
 ## Current Version
 
-This version establishes the basic application structure for event discovery. It includes a responsive single-page layout, event data rendered from a JavaScript data structure, search and filter controls for activities, and a participation section that will later support event registration.
+This version establishes the basic application structure for event discovery and participation. It includes a responsive single-page layout, event data rendered from a JavaScript data structure, search and filter controls for activities, and a validated registration interest form.
 
 ## Project Setup
 
