@@ -31,10 +31,27 @@ const events = [
   },
 ]
 
+const registrationsStorageKey = 'greenmelbourne-connect-registrations'
+
+const loadStoredRegistrations = () => {
+  try {
+    const savedRegistrations = localStorage.getItem(registrationsStorageKey)
+
+    if (!savedRegistrations) {
+      return []
+    }
+
+    const parsedRegistrations = JSON.parse(savedRegistrations)
+    return Array.isArray(parsedRegistrations) ? parsedRegistrations : []
+  } catch {
+    return []
+  }
+}
+
 const searchText = ref('')
 const selectedType = ref('All')
 const selectedSuburb = ref('All')
-const registrations = ref([])
+const registrations = ref(loadStoredRegistrations())
 const registrationMessage = ref('')
 
 const registrationForm = reactive({
@@ -85,6 +102,14 @@ const clearFilters = () => {
   searchText.value = ''
   selectedType.value = 'All'
   selectedSuburb.value = 'All'
+}
+
+const saveRegistrations = () => {
+  try {
+    localStorage.setItem(registrationsStorageKey, JSON.stringify(registrations.value))
+  } catch {
+    return
+  }
 }
 
 const validateField = (fieldName) => {
@@ -150,6 +175,7 @@ const submitRegistration = () => {
   }
 
   registrations.value.unshift(registration)
+  saveRegistrations()
   registrationMessage.value = `Thanks, ${registration.fullName}. Your interest in ${registration.eventTitle} has been recorded.`
   resetRegistrationForm()
 }
