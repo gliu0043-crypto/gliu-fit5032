@@ -50,6 +50,10 @@ p {
   backdrop-filter: blur(12px);
 }
 
+.site-header .navbar {
+  padding: 0.8rem 0;
+}
+
 .brand-link {
   color: #173f2f;
   font-size: 1.1rem;
@@ -57,7 +61,23 @@ p {
   text-decoration: none;
 }
 
-.nav-links a {
+.site-header .navbar-toggler {
+  border-color: rgba(31, 41, 51, 0.18);
+}
+
+.site-header .navbar-toggler:focus {
+  box-shadow: 0 0 0 0.18rem rgba(33, 110, 78, 0.2);
+}
+
+.site-header .navbar-toggler-icon {
+  background-image: linear-gradient(#173f2f, #173f2f), linear-gradient(#173f2f, #173f2f),
+    linear-gradient(#173f2f, #173f2f);
+  background-position: center 32%, center, center 68%;
+  background-repeat: no-repeat;
+  background-size: 1.35rem 2px;
+}
+
+.site-header .nav-link {
   border-radius: 999px;
   color: #354052;
   font-size: 0.95rem;
@@ -66,8 +86,9 @@ p {
   text-decoration: none;
 }
 
-.nav-links a:hover,
-.nav-links a:focus {
+.site-header .nav-link:hover,
+.site-header .nav-link:focus,
+.site-header .nav-link.active {
   background: #e3f2e9;
   color: #173f2f;
 }
@@ -143,25 +164,60 @@ p {
   padding: 4rem 0;
 }
 
+.page-section {
+  min-height: calc(100vh - 149px);
+}
+
 .section-heading {
   max-width: 760px;
   margin-bottom: 2rem;
 }
 
+.section-heading h1,
 .section-heading h2,
-.join-section h2 {
+.join-section h1,
+.join-section h2,
+.page-section h1 {
   color: #173f2f;
   font-size: clamp(1.9rem, 4vw, 3rem);
   font-weight: 820;
   line-height: 1.1;
 }
 
+.info-card,
 .filter-panel,
 .empty-state {
   border: 1px solid rgba(31, 41, 51, 0.1);
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 16px 35px rgba(31, 41, 51, 0.08);
+}
+
+.info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.5rem;
+}
+
+.info-card h3 {
+  color: #173f2f;
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 0;
+}
+
+.info-card p {
+  color: #5d6675;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.info-card a {
+  color: #216e4e;
+  font-weight: 800;
+  margin-top: auto;
+  text-decoration: none;
 }
 
 .filter-panel {
@@ -226,6 +282,7 @@ p {
   padding: 0.35rem 0.7rem;
 }
 
+.event-card h2,
 .event-card h3 {
   color: #1f2933;
   font-size: 1.3rem;
@@ -256,6 +313,21 @@ p {
   margin: 0;
 }
 
+.detail-list {
+  margin-top: 1.25rem;
+}
+
+.detail-list div {
+  grid-template-columns: 112px 1fr;
+}
+
+.event-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
 .empty-state {
   display: grid;
   justify-items: start;
@@ -278,12 +350,55 @@ p {
   background: #edf6f0;
 }
 
+.auth-section {
+  background: linear-gradient(180deg, #edf6f0, #f6f8f5);
+}
+
+.auth-layout {
+  max-width: 560px;
+}
+
+.auth-switch {
+  display: inline-flex;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(31, 41, 51, 0.12);
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 0.3rem;
+}
+
+.auth-switch-button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #354052;
+  font-weight: 800;
+  padding: 0.5rem 1rem;
+}
+
+.auth-switch-button.active {
+  background: #216e4e;
+  color: #ffffff;
+}
+
+.auth-panel {
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 35px rgba(31, 41, 51, 0.08);
+  padding: 1.5rem;
+}
+
 .registration-form,
 .registrations-panel {
   padding: 1.5rem;
 }
 
+.auth-panel h2,
 .registration-form h3,
+.registration-form h2,
+.registrations-panel h2,
 .registrations-panel h3 {
   color: #173f2f;
   font-size: 1.3rem;
@@ -291,17 +406,20 @@ p {
   margin-bottom: 1.25rem;
 }
 
+.auth-panel .form-label,
 .registration-form .form-label {
   color: #263241;
   font-weight: 750;
 }
 
+.auth-panel .form-control,
 .registration-form .form-control,
 .registration-form .form-select {
   border-color: rgba(31, 41, 51, 0.16);
   color: #263241;
 }
 
+.auth-panel .form-control:focus,
 .registration-form .form-control:focus,
 .registration-form .form-select:focus {
   border-color: #216e4e;
@@ -354,8 +472,10 @@ p {
   }
 
   .impact-panel,
+  .info-card,
   .filter-panel,
   .empty-state,
+  .auth-panel,
   .registration-form,
   .registrations-panel,
   .registration-card,
