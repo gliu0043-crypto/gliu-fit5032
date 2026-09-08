@@ -437,6 +437,14 @@ p {
   background: #edf6f0;
 }
 
+.join-section.page-section {
+  padding-top: 3rem;
+}
+
+.join-form-column {
+  padding-top: 0;
+}
+
 .auth-section {
   background: linear-gradient(180deg, #edf6f0, #f6f8f5);
 }
@@ -575,5 +583,11 @@ p {
   .event-details div {
     grid-template-columns: 1fr;
     gap: 0.15rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .join-form-column {
+    padding-top: 2.25rem;
   }
 }

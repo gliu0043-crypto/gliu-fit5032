@@ -191,7 +191,7 @@ const submitRegistration = () => {
           </div>
         </div>
 
-        <div class="col-12 col-lg-7">
+        <div class="col-12 col-lg-7 join-form-column">
           <form class="registration-form" novalidate @submit.prevent="submitRegistration">
             <h2>Register your interest</h2>
 
