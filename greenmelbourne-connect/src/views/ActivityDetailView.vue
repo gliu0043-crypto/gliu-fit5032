@@ -17,7 +17,12 @@ const event = computed(() => events.find((activity) => activity.id === Number(ro
           <p class="hero-copy">{{ event.description }}</p>
 
           <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-            <RouterLink class="btn btn-success btn-lg" to="/join">Register interest</RouterLink>
+            <RouterLink
+              class="btn btn-success btn-lg"
+              :to="{ name: 'join', query: { activityId: event.id } }"
+            >
+              Register interest
+            </RouterLink>
             <RouterLink class="btn btn-outline-dark btn-lg" to="/activities">Back to activities</RouterLink>
           </div>
         </div>

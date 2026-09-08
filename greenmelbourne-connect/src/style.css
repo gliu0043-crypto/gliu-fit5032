@@ -122,6 +122,8 @@ p {
 }
 
 .impact-panel,
+.activity-picker,
+.selected-activity,
 .registration-form,
 .registrations-panel,
 .registration-card,
@@ -328,6 +330,82 @@ p {
   margin-top: auto;
 }
 
+.activity-picker {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+}
+
+.activity-picker h2 {
+  color: #173f2f;
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+.activity-picker .form-label {
+  color: #263241;
+  font-weight: 750;
+}
+
+.activity-choice-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.activity-choice-card {
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 1rem;
+}
+
+.activity-choice-card.selected {
+  border-color: #216e4e;
+  box-shadow: 0 0 0 0.18rem rgba(33, 110, 78, 0.14);
+}
+
+.activity-choice-card h3 {
+  color: #1f2933;
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 0.75rem 0 0.35rem;
+}
+
+.activity-choice-card p {
+  color: #5d6675;
+  line-height: 1.55;
+  margin-bottom: 1rem;
+}
+
+.selected-activity {
+  padding: 1rem;
+}
+
+.selected-activity.selection-missing {
+  border-color: #dc3545;
+}
+
+.selected-activity h3 {
+  color: #173f2f;
+  font-size: 1.08rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+}
+
+.selected-activity p {
+  color: #5d6675;
+  line-height: 1.55;
+  margin-bottom: 0;
+}
+
+.selection-error {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.4rem;
+}
+
 .empty-state {
   display: grid;
   justify-items: start;
@@ -344,6 +422,15 @@ p {
 .empty-state p {
   color: #5d6675;
   margin-bottom: 0.25rem;
+}
+
+.compact-empty-state {
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.compact-empty-state h3 {
+  font-size: 1.05rem;
 }
 
 .join-section {
@@ -472,6 +559,8 @@ p {
   }
 
   .impact-panel,
+  .activity-picker,
+  .selected-activity,
   .info-card,
   .filter-panel,
   .empty-state,

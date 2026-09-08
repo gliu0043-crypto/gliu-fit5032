@@ -1,9 +1,12 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { events, loadStoredRegistrations, saveStoredRegistrations } from '../data/events'
 
+const route = useRoute()
 const registrations = ref(loadStoredRegistrations())
 const registrationMessage = ref('')
+const activitySearch = ref('')
 
 const registrationForm = reactive({
   fullName: '',
@@ -23,6 +26,42 @@ const formErrors = reactive({
 
 const selectedEvent = computed(() =>
   events.find((event) => event.id === Number(registrationForm.eventId)),
+)
+
+const activitySearchResults = computed(() => {
+  const search = activitySearch.value.trim().toLowerCase()
+
+  if (!search) {
+    return events
+  }
+
+  return events.filter((event) => {
+    const searchableText = `${event.title} ${event.suburb} ${event.type} ${event.description}`.toLowerCase()
+    return searchableText.includes(search)
+  })
+})
+
+const chooseActivity = (event) => {
+  registrationForm.eventId = String(event.id)
+  formErrors.eventId = ''
+  registrationMessage.value = ''
+}
+
+const chooseActivityFromRoute = () => {
+  const eventFromRoute = events.find((event) => event.id === Number(route.query.activityId))
+
+  if (eventFromRoute) {
+    chooseActivity(eventFromRoute)
+  }
+}
+
+chooseActivityFromRoute()
+
+watch(
+  () => route.query.activityId,
+  () => {
+    chooseActivityFromRoute()
+  },
 )
 
 const validateField = (fieldName) => {
@@ -105,6 +144,51 @@ const submitRegistration = () => {
             Community members can register interest in upcoming activities,
             check key event details, and help organisers prepare the right support.
           </p>
+
+          <div class="activity-picker">
+            <h2>Find an activity</h2>
+
+            <label class="form-label" for="activity-search">Search activity</label>
+            <input
+              id="activity-search"
+              v-model="activitySearch"
+              class="form-control"
+              type="search"
+              placeholder="Search by title, suburb, or type"
+            >
+
+            <p class="form-hint">{{ activitySearchResults.length }} activities available</p>
+
+            <div v-if="activitySearchResults.length > 0" class="activity-choice-list">
+              <article
+                v-for="event in activitySearchResults"
+                :key="event.id"
+                class="activity-choice-card"
+                :class="{ selected: selectedEvent && selectedEvent.id === event.id }"
+              >
+                <span class="event-type">{{ event.type }}</span>
+                <h3>{{ event.title }}</h3>
+                <p>{{ event.suburb }} - {{ event.date }}</p>
+
+                <div class="event-card-actions">
+                  <RouterLink
+                    class="btn btn-outline-dark btn-sm"
+                    :to="{ name: 'activity-detail', params: { id: event.id } }"
+                  >
+                    View details
+                  </RouterLink>
+                  <button class="btn btn-success btn-sm" type="button" @click="chooseActivity(event)">
+                    Select activity
+                  </button>
+                </div>
+              </article>
+            </div>
+
+            <div v-else class="empty-state compact-empty-state">
+              <h3>No activities found.</h3>
+              <p>Try another suburb, title, or activity type.</p>
+            </div>
+          </div>
         </div>
 
         <div class="col-12 col-lg-7">
@@ -116,6 +200,23 @@ const submitRegistration = () => {
             </div>
 
             <div class="row g-3">
+              <div class="col-12">
+                <div
+                  class="selected-activity"
+                  :class="{ 'selection-missing': formErrors.eventId }"
+                >
+                  <p class="panel-label">Selected activity</p>
+                  <template v-if="selectedEvent">
+                    <h3>{{ selectedEvent.title }}</h3>
+                    <p>{{ selectedEvent.suburb }} - {{ selectedEvent.date }}</p>
+                  </template>
+                  <p v-else>Search and select an activity before submitting.</p>
+                </div>
+                <div v-if="formErrors.eventId" class="selection-error">
+                  {{ formErrors.eventId }}
+                </div>
+              </div>
+
               <div class="col-12 col-md-6">
                 <label class="form-label" for="full-name">Full name</label>
                 <input
@@ -164,26 +265,6 @@ const submitRegistration = () => {
                 >
                 <div v-if="formErrors.suburb" class="invalid-feedback">
                   {{ formErrors.suburb }}
-                </div>
-              </div>
-
-              <div class="col-12 col-md-6">
-                <label class="form-label" for="event-choice">Activity</label>
-                <select
-                  id="event-choice"
-                  v-model="registrationForm.eventId"
-                  class="form-select"
-                  :class="{ 'is-invalid': formErrors.eventId }"
-                  @blur="validateField('eventId')"
-                  @change="validateField('eventId')"
-                >
-                  <option value="">Select an activity</option>
-                  <option v-for="event in events" :key="event.id" :value="event.id">
-                    {{ event.title }}
-                  </option>
-                </select>
-                <div v-if="formErrors.eventId" class="invalid-feedback">
-                  {{ formErrors.eventId }}
                 </div>
               </div>
 

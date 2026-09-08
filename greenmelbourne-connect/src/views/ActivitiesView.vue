@@ -127,7 +127,12 @@ const clearFilters = () => {
                 >
                   View details
                 </RouterLink>
-                <RouterLink class="btn btn-outline-dark" to="/join">Register interest</RouterLink>
+                <RouterLink
+                  class="btn btn-outline-dark"
+                  :to="{ name: 'join', query: { activityId: event.id } }"
+                >
+                  Register interest
+                </RouterLink>
               </div>
             </div>
           </article>
