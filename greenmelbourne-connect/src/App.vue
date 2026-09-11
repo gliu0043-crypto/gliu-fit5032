@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { currentUser, logoutUser } from './data/auth'
 
 const route = useRoute()
 const isNavOpen = ref(false)
@@ -9,8 +10,11 @@ const navLinks = [
   { label: 'Home', to: '/' },
   { label: 'Activities', to: '/activities' },
   { label: 'Join Event', to: '/join' },
-  { label: 'Member Access', to: '/auth' },
 ]
+
+const handleLogout = () => {
+  logoutUser()
+}
 
 watch(
   () => route.fullPath,
@@ -49,6 +53,22 @@ watch(
               >
                 {{ link.label }}
               </RouterLink>
+
+              <RouterLink
+                v-if="!currentUser"
+                class="nav-link"
+                active-class="active"
+                to="/auth"
+              >
+                Member Access
+              </RouterLink>
+
+              <div v-else class="nav-user-area">
+                <span class="nav-user-name">{{ currentUser.fullName }}</span>
+                <button class="btn btn-outline-success btn-sm" type="button" @click="handleLogout">
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>
