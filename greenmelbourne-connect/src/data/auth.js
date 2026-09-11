@@ -3,6 +3,11 @@ import { ref } from 'vue'
 const usersStorageKey = 'greenmelbourne-connect-users'
 const currentUserStorageKey = 'greenmelbourne-connect-current-user'
 
+export const roleLabels = {
+  member: 'Community member',
+  organiser: 'Organiser',
+}
+
 const readJson = (key, fallbackValue) => {
   try {
     const savedValue = localStorage.getItem(key)
@@ -26,11 +31,23 @@ const writeJson = (key, value) => {
 }
 
 export const users = ref(readJson(usersStorageKey, []))
-export const currentUser = ref(readJson(currentUserStorageKey, null))
+const savedCurrentUser = readJson(currentUserStorageKey, null)
 
-export const registerUser = ({ fullName, email, password }) => {
+const normaliseRole = (role) => (role === 'organiser' ? 'organiser' : 'member')
+
+const buildSessionUser = (user) => ({
+  id: user.id,
+  fullName: user.fullName,
+  email: user.email,
+  role: normaliseRole(user.role),
+})
+
+export const currentUser = ref(savedCurrentUser ? buildSessionUser(savedCurrentUser) : null)
+
+export const registerUser = ({ fullName, email, password, role }) => {
   const cleanName = fullName.trim()
   const cleanEmail = email.trim().toLowerCase()
+  const cleanRole = normaliseRole(role)
 
   const userExists = users.value.some((user) => user.email === cleanEmail)
 
@@ -46,16 +63,13 @@ export const registerUser = ({ fullName, email, password }) => {
     fullName: cleanName,
     email: cleanEmail,
     password,
+    role: cleanRole,
   }
 
   users.value.push(newUser)
   writeJson(usersStorageKey, users.value)
 
-  currentUser.value = {
-    id: newUser.id,
-    fullName: newUser.fullName,
-    email: newUser.email,
-  }
+  currentUser.value = buildSessionUser(newUser)
   writeJson(currentUserStorageKey, currentUser.value)
 
   return {
@@ -77,11 +91,7 @@ export const loginUser = ({ email, password }) => {
     }
   }
 
-  currentUser.value = {
-    id: matchedUser.id,
-    fullName: matchedUser.fullName,
-    email: matchedUser.email,
-  }
+  currentUser.value = buildSessionUser(matchedUser)
   writeJson(currentUserStorageKey, currentUser.value)
 
   return {

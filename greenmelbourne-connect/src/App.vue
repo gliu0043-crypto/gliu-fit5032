@@ -63,12 +63,23 @@ watch(
                 Member Access
               </RouterLink>
 
-              <div v-else class="nav-user-area">
-                <span class="nav-user-name">{{ currentUser.fullName }}</span>
-                <button class="btn btn-outline-success btn-sm" type="button" @click="handleLogout">
-                  Logout
-                </button>
-              </div>
+              <template v-else>
+                <RouterLink
+                  v-if="currentUser.role === 'organiser'"
+                  class="nav-link"
+                  active-class="active"
+                  to="/organiser"
+                >
+                  Organiser
+                </RouterLink>
+
+                <div class="nav-user-area">
+                  <span class="nav-user-name">{{ currentUser.fullName }}</span>
+                  <button class="btn btn-outline-success btn-sm" type="button" @click="handleLogout">
+                    Logout
+                  </button>
+                </div>
+              </template>
             </div>
           </div>
         </div>

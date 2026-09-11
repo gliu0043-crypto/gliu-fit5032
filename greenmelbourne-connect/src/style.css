@@ -507,6 +507,16 @@ p {
   margin-bottom: 1rem;
 }
 
+.role-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #dceee4;
+  color: #216e4e;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 0.35rem 0.75rem;
+}
+
 .registration-form,
 .registrations-panel {
   padding: 1.5rem;
@@ -530,6 +540,7 @@ p {
 }
 
 .auth-panel .form-control,
+.auth-panel .form-select,
 .registration-form .form-control,
 .registration-form .form-select {
   border-color: rgba(31, 41, 51, 0.16);
@@ -537,6 +548,7 @@ p {
 }
 
 .auth-panel .form-control:focus,
+.auth-panel .form-select:focus,
 .registration-form .form-control:focus,
 .registration-form .form-select:focus {
   border-color: #216e4e;
@@ -572,6 +584,85 @@ p {
   margin-bottom: 0;
 }
 
+.organiser-section {
+  background: linear-gradient(180deg, #edf6f0, #f6f8f5);
+}
+
+.access-message,
+.summary-card,
+.organiser-table-card {
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 35px rgba(31, 41, 51, 0.08);
+}
+
+.access-message {
+  max-width: 680px;
+  padding: 1.5rem;
+}
+
+.access-message h2 {
+  color: #173f2f;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.access-message p {
+  color: #5d6675;
+  line-height: 1.6;
+}
+
+.organiser-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-card {
+  padding: 1.25rem;
+}
+
+.summary-card strong {
+  color: #173f2f;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.organiser-table-card {
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+.registration-table {
+  margin-bottom: 0;
+}
+
+.registration-table th {
+  color: #354052;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.registration-table td {
+  color: #263241;
+  min-width: 140px;
+}
+
+.registration-table td strong,
+.registration-table td span {
+  display: block;
+}
+
+.registration-table td span {
+  color: #6c7583;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin-top: 0.2rem;
+}
+
 .site-footer {
   border-top: 1px solid rgba(31, 41, 51, 0.08);
   background: #173f2f;
@@ -592,12 +683,14 @@ p {
   .activity-picker,
   .selected-activity,
   .info-card,
-  .filter-panel,
-  .empty-state,
-  .auth-panel,
-  .registration-form,
-  .registrations-panel,
-  .registration-card,
+    .filter-panel,
+    .empty-state,
+    .auth-panel,
+    .access-message,
+    .summary-card,
+    .registration-form,
+    .registrations-panel,
+    .registration-card,
   .event-card-body {
     padding: 1.2rem;
   }
@@ -605,6 +698,10 @@ p {
   .event-details div {
     grid-template-columns: 1fr;
     gap: 0.15rem;
+  }
+
+  .organiser-summary-grid {
+    grid-template-columns: 1fr;
   }
 }
 

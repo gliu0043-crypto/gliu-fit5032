@@ -1,6 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
-import { currentUser, loginUser, logoutUser, registerUser } from '../data/auth'
+import { RouterLink } from 'vue-router'
+import { currentUser, loginUser, logoutUser, registerUser, roleLabels } from '../data/auth'
 
 const activePanel = ref('login')
 const authMessage = ref('')
@@ -15,6 +16,7 @@ const registerForm = reactive({
   fullName: '',
   email: '',
   password: '',
+  role: 'member',
 })
 
 const loginErrors = reactive({
@@ -65,6 +67,7 @@ const resetRegisterForm = () => {
   registerForm.fullName = ''
   registerForm.email = ''
   registerForm.password = ''
+  registerForm.role = 'member'
 }
 
 const handleLogin = () => {
@@ -125,9 +128,23 @@ const handleLogout = () => {
           <p class="panel-label">Signed in</p>
           <h2>{{ currentUser.fullName }}</h2>
           <p>{{ currentUser.email }}</p>
-          <button class="btn btn-outline-success btn-lg" type="button" @click="handleLogout">
-            Logout
-          </button>
+          <span class="role-badge">{{ roleLabels[currentUser.role] }}</span>
+
+          <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
+            <RouterLink
+              v-if="currentUser.role === 'organiser'"
+              class="btn btn-success btn-lg"
+              to="/organiser"
+            >
+              Open organiser dashboard
+            </RouterLink>
+            <RouterLink v-else class="btn btn-success btn-lg" to="/join">
+              Find an activity
+            </RouterLink>
+            <button class="btn btn-outline-success btn-lg" type="button" @click="handleLogout">
+              Logout
+            </button>
+          </div>
         </div>
 
         <template v-else>
@@ -221,6 +238,15 @@ const handleLogout = () => {
               <div v-if="registerErrors.email" class="invalid-feedback">
                 {{ registerErrors.email }}
               </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="register-role">Account type</label>
+              <select id="register-role" v-model="registerForm.role" class="form-select">
+                <option value="member">Community member</option>
+                <option value="organiser">Organiser</option>
+              </select>
+              <p class="form-hint">Organiser accounts can manage submitted event registrations.</p>
             </div>
 
             <div class="mb-4">

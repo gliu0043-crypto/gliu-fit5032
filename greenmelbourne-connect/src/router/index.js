@@ -4,6 +4,7 @@ import ActivitiesView from '../views/ActivitiesView.vue'
 import ActivityDetailView from '../views/ActivityDetailView.vue'
 import JoinView from '../views/JoinView.vue'
 import AuthView from '../views/AuthView.vue'
+import OrganiserView from '../views/OrganiserView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -32,6 +33,11 @@ const router = createRouter({
       path: '/auth',
       name: 'auth',
       component: AuthView,
+    },
+    {
+      path: '/organiser',
+      name: 'organiser',
+      component: OrganiserView,
     },
   ],
 })
