@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { currentUser, roleLabels } from '../data/auth'
 import { loadStoredRegistrations, saveStoredRegistrations } from '../data/events'
+import { safeRegistrationStatus } from '../data/security'
 
 const registrations = ref(loadStoredRegistrations())
 
@@ -21,11 +22,19 @@ const saveRegistrations = () => {
 }
 
 const updateRegistrationStatus = (registration, status) => {
-  registration.status = status
+  if (!isOrganiser.value) {
+    return
+  }
+
+  registration.status = safeRegistrationStatus(status)
   saveRegistrations()
 }
 
 const deleteRegistration = (registrationId) => {
+  if (!isOrganiser.value) {
+    return
+  }
+
   registrations.value = registrations.value.filter((registration) => registration.id !== registrationId)
   saveRegistrations()
 }

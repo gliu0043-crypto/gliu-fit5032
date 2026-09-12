@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { cleanEmail, cleanText, hashPassword } from './security'
 
 const usersStorageKey = 'greenmelbourne-connect-users'
 const currentUserStorageKey = 'greenmelbourne-connect-current-user'
@@ -44,12 +45,13 @@ const buildSessionUser = (user) => ({
 
 export const currentUser = ref(savedCurrentUser ? buildSessionUser(savedCurrentUser) : null)
 
-export const registerUser = ({ fullName, email, password, role }) => {
-  const cleanName = fullName.trim()
-  const cleanEmail = email.trim().toLowerCase()
+export const registerUser = async ({ fullName, email, password, role }) => {
+  const cleanName = cleanText(fullName)
+  const userEmail = cleanEmail(email)
   const cleanRole = normaliseRole(role)
+  const passwordHash = await hashPassword(password)
 
-  const userExists = users.value.some((user) => user.email === cleanEmail)
+  const userExists = users.value.some((user) => user.email === userEmail)
 
   if (userExists) {
     return {
@@ -61,8 +63,8 @@ export const registerUser = ({ fullName, email, password, role }) => {
   const newUser = {
     id: Date.now(),
     fullName: cleanName,
-    email: cleanEmail,
-    password,
+    email: userEmail,
+    passwordHash,
     role: cleanRole,
   }
 
@@ -78,10 +80,13 @@ export const registerUser = ({ fullName, email, password, role }) => {
   }
 }
 
-export const loginUser = ({ email, password }) => {
-  const cleanEmail = email.trim().toLowerCase()
+export const loginUser = async ({ email, password }) => {
+  const userEmail = cleanEmail(email)
+  const passwordHash = await hashPassword(password)
   const matchedUser = users.value.find(
-    (user) => user.email === cleanEmail && user.password === password,
+    (user) =>
+      user.email === userEmail &&
+      (user.passwordHash === passwordHash || user.password === password),
   )
 
   if (!matchedUser) {
@@ -89,6 +94,12 @@ export const loginUser = ({ email, password }) => {
       success: false,
       message: 'Email or password is incorrect.',
     }
+  }
+
+  if (!matchedUser.passwordHash || matchedUser.password) {
+    matchedUser.passwordHash = passwordHash
+    delete matchedUser.password
+    writeJson(usersStorageKey, users.value)
   }
 
   currentUser.value = buildSessionUser(matchedUser)

@@ -70,14 +70,14 @@ const resetRegisterForm = () => {
   registerForm.role = 'member'
 }
 
-const handleLogin = () => {
+const handleLogin = async () => {
   authMessage.value = ''
 
   if (!validateLoginForm()) {
     return
   }
 
-  const result = loginUser(loginForm)
+  const result = await loginUser(loginForm)
   setAuthMessage(result.message, result.success ? 'success' : 'danger')
 
   if (result.success) {
@@ -85,14 +85,14 @@ const handleLogin = () => {
   }
 }
 
-const handleRegister = () => {
+const handleRegister = async () => {
   authMessage.value = ''
 
   if (!validateRegisterForm()) {
     return
   }
 
-  const result = registerUser(registerForm)
+  const result = await registerUser(registerForm)
   setAuthMessage(result.message, result.success ? 'success' : 'danger')
 
   if (result.success) {

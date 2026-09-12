@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { currentUser } from '../data/auth'
 import { events } from '../data/events'
 import { addRating, ratings } from '../data/ratings'
+import { cleanLongText, cleanText } from '../data/security'
 
 const route = useRoute()
 const event = computed(() => events.find((activity) => activity.id === Number(route.params.id)))
@@ -45,7 +46,7 @@ const averageRatingText = computed(() =>
 )
 
 const reviewerName = computed(() =>
-  currentUser.value ? currentUser.value.fullName : ratingForm.reviewerName.trim(),
+  currentUser.value ? cleanText(currentUser.value.fullName) : cleanText(ratingForm.reviewerName),
 )
 
 const validateRating = () => {
@@ -53,7 +54,7 @@ const validateRating = () => {
   ratingErrors.reviewerName =
     reviewerName.value.length >= 2 ? '' : 'Enter your name before submitting.'
   ratingErrors.comment =
-    ratingForm.comment.trim().length >= 10
+    cleanLongText(ratingForm.comment).length >= 10
       ? ''
       : 'Write at least 10 characters about this activity.'
 
@@ -81,7 +82,7 @@ const submitRating = () => {
     eventId: event.value.id,
     score: Number(ratingForm.score),
     reviewerName: reviewerName.value,
-    comment: ratingForm.comment.trim(),
+    comment: cleanLongText(ratingForm.comment),
     submittedAt: new Date().toLocaleDateString('en-AU'),
   })
 

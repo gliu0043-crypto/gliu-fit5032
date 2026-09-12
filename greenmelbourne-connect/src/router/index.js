@@ -5,6 +5,7 @@ import ActivityDetailView from '../views/ActivityDetailView.vue'
 import JoinView from '../views/JoinView.vue'
 import AuthView from '../views/AuthView.vue'
 import OrganiserView from '../views/OrganiserView.vue'
+import { currentUser } from '../data/auth'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -40,6 +41,14 @@ const router = createRouter({
       component: OrganiserView,
     },
   ],
+})
+
+router.beforeEach((to) => {
+  if (to.name === 'organiser' && currentUser.value?.role !== 'organiser') {
+    return { name: 'auth' }
+  }
+
+  return true
 })
 
 export default router

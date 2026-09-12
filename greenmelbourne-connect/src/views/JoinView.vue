@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { events, loadStoredRegistrations, saveStoredRegistrations } from '../data/events'
+import { cleanEmail, cleanLongText, cleanText } from '../data/security'
 
 const route = useRoute()
 const registrations = ref(loadStoredRegistrations())
@@ -69,17 +70,17 @@ const validateField = (fieldName) => {
 
   if (fieldName === 'fullName') {
     formErrors.fullName =
-      registrationForm.fullName.trim().length >= 2 ? '' : 'Enter your full name.'
+      cleanText(registrationForm.fullName).length >= 2 ? '' : 'Enter your full name.'
   }
 
   if (fieldName === 'email') {
-    formErrors.email = emailPattern.test(registrationForm.email.trim())
+    formErrors.email = emailPattern.test(cleanEmail(registrationForm.email))
       ? ''
       : 'Enter a valid email address.'
   }
 
   if (fieldName === 'suburb') {
-    formErrors.suburb = registrationForm.suburb.trim() ? '' : 'Enter your suburb.'
+    formErrors.suburb = cleanText(registrationForm.suburb) ? '' : 'Enter your suburb.'
   }
 
   if (fieldName === 'eventId') {
@@ -88,7 +89,7 @@ const validateField = (fieldName) => {
 
   if (fieldName === 'reason') {
     formErrors.reason =
-      registrationForm.reason.trim().length >= 20
+      cleanLongText(registrationForm.reason).length >= 20
         ? ''
         : 'Tell us why you want to join in at least 20 characters.'
   }
@@ -119,11 +120,12 @@ const submitRegistration = () => {
 
   const registration = {
     id: Date.now(),
-    fullName: registrationForm.fullName.trim(),
-    email: registrationForm.email.trim(),
-    suburb: registrationForm.suburb.trim(),
+    fullName: cleanText(registrationForm.fullName),
+    email: cleanEmail(registrationForm.email),
+    suburb: cleanText(registrationForm.suburb),
     eventTitle: selectedEvent.value.title,
-    reason: registrationForm.reason.trim(),
+    reason: cleanLongText(registrationForm.reason),
+    status: 'Waiting',
   }
 
   registrations.value.unshift(registration)
