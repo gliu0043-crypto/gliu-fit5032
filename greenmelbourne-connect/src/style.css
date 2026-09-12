@@ -137,6 +137,7 @@ p {
 .impact-panel,
 .activity-picker,
 .selected-activity,
+.rating-panel,
 .registration-form,
 .registrations-panel,
 .registration-card,
@@ -167,6 +168,7 @@ p {
 }
 
 .impact-panel p,
+.rating-panel p,
 .section-heading p,
 .event-card p,
 .join-section p,
@@ -413,6 +415,71 @@ p {
   margin-bottom: 0;
 }
 
+.rating-section {
+  margin-top: 2rem;
+}
+
+.rating-panel {
+  padding: 1.5rem;
+}
+
+.rating-panel h2 {
+  color: #173f2f;
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+.rating-option-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.rating-option {
+  display: grid;
+  min-height: 3rem;
+  cursor: pointer;
+  place-items: center;
+  border: 1px solid rgba(31, 41, 51, 0.16);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #263241;
+  font-weight: 850;
+}
+
+.rating-option.selected,
+.rating-option:hover,
+.rating-option:focus-within {
+  border-color: #216e4e;
+  background: #dceee4;
+  color: #173f2f;
+}
+
+.rating-feedback-list {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1.25rem;
+}
+
+.rating-feedback-list article {
+  border-top: 1px solid rgba(31, 41, 51, 0.1);
+  padding-top: 0.8rem;
+}
+
+.rating-feedback-list strong {
+  color: #173f2f;
+}
+
+.rating-feedback-list p {
+  margin: 0.35rem 0;
+}
+
+.rating-feedback-list span {
+  color: #6c7583;
+  font-size: 0.85rem;
+}
+
 .selection-error {
   color: #dc3545;
   font-size: 0.875rem;
@@ -534,6 +601,7 @@ p {
 }
 
 .auth-panel .form-label,
+.rating-panel .form-label,
 .registration-form .form-label {
   color: #263241;
   font-weight: 750;
@@ -541,6 +609,7 @@ p {
 
 .auth-panel .form-control,
 .auth-panel .form-select,
+.rating-panel .form-control,
 .registration-form .form-control,
 .registration-form .form-select {
   border-color: rgba(31, 41, 51, 0.16);
@@ -549,6 +618,7 @@ p {
 
 .auth-panel .form-control:focus,
 .auth-panel .form-select:focus,
+.rating-panel .form-control:focus,
 .registration-form .form-control:focus,
 .registration-form .form-select:focus {
   border-color: #216e4e;
@@ -687,6 +757,7 @@ p {
     .empty-state,
     .auth-panel,
     .access-message,
+    .rating-panel,
     .summary-card,
     .registration-form,
     .registrations-panel,
@@ -702,6 +773,10 @@ p {
 
   .organiser-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .rating-option-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
