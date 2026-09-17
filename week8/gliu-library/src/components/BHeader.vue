@@ -1,0 +1,77 @@
+<template>
+  <div class="container">
+    <header class="d-flex justify-content-center py-3 border-bottom">
+      <ul class="nav nav-pills align-items-center">
+        <li class="nav-item">
+          <router-link to="/" class="nav-link" active-class="active">
+            Home (Week 8)
+          </router-link>
+        </li>
+        <li class="nav-item">
+          <router-link to="/about" class="nav-link" active-class="active">
+            About
+          </router-link>
+        </li>
+        <li v-if="!isAuthenticated" class="nav-item">
+          <router-link to="/login" class="nav-link" active-class="active">
+            Login
+          </router-link>
+        </li>
+        <li v-else class="nav-item">
+          <button type="button" class="nav-link logout-button" @click="handleLogout">
+            Logout
+          </button>
+        </li>
+        <li class="nav-item">
+          <router-link to="/FireRegister" class="nav-link" active-class="active">
+            Firebase Register
+          </router-link>
+        </li>
+        <li class="nav-item">
+          <router-link to="/FireLogin" class="nav-link" active-class="active">
+            Firebase Login
+          </router-link>
+        </li>
+        <li class="nav-item">
+          <router-link to="/FireAccount" class="nav-link" active-class="active">
+            Firebase Account
+          </router-link>
+        </li>
+        <li class="nav-item">
+          <router-link to="/FireLogout" class="nav-link" active-class="active">
+            Firebase Logout
+          </router-link>
+        </li>
+        <li class="nav-item">
+          <router-link to="/addbook" class="nav-link" active-class="active">
+            Add Book
+          </router-link>
+        </li>
+      </ul>
+    </header>
+  </div>
+</template>
+
+<script setup>
+import { useRouter } from 'vue-router'
+import { isAuthenticated, logout } from '../auth'
+
+const router = useRouter()
+
+const handleLogout = () => {
+  logout()
+  router.push('/login')
+}
+</script>
+
+<style scoped>
+.logout-button {
+  border: 0;
+  background: transparent;
+  color: var(--bs-nav-link-color);
+}
+
+.logout-button:hover {
+  color: var(--bs-nav-link-hover-color);
+}
+</style>
