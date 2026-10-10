@@ -1,62 +1,56 @@
-export const events = [
-  {
-    id: 1,
-    title: 'Clayton Community Tree Planting Day',
-    suburb: 'Clayton',
-    date: 'Saturday 29 August 2026',
-    type: 'Tree planting',
-    places: 18,
-    description: 'A beginner-friendly planting session with tools and guidance provided.',
-  },
-  {
-    id: 2,
-    title: 'Box Hill Habitat Care Morning',
-    suburb: 'Box Hill',
-    date: 'Sunday 30 August 2026',
-    type: 'Habitat restoration',
-    places: 12,
-    description: 'Help restore local habitat through mulching, weeding, and native planting.',
-  },
-  {
-    id: 3,
-    title: 'Yarra Native Garden Workshop',
-    suburb: 'Yarra',
-    date: 'Saturday 5 September 2026',
-    type: 'Biodiversity education',
-    places: 20,
-    description: 'Learn simple ways to support native plants, insects, and birds at home.',
-  },
-]
+import { reactive, ref, watch } from 'vue'
+import { collection, doc, onSnapshot, query, where, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { db, requireDatabase } from '../firebase/init'
+import { currentUser } from './auth'
 
-export const registrationsStorageKey = 'greenmelbourne-connect-registrations'
-
-export const loadStoredRegistrations = () => {
-  try {
-    if (typeof localStorage === 'undefined') {
-      return []
-    }
-
-    const savedRegistrations = localStorage.getItem(registrationsStorageKey)
-
-    if (!savedRegistrations) {
-      return []
-    }
-
-    const parsedRegistrations = JSON.parse(savedRegistrations)
-    return Array.isArray(parsedRegistrations) ? parsedRegistrations : []
-  } catch {
-    return []
-  }
+export const events = reactive([])
+export const eventsLoading = ref(Boolean(db))
+export const eventsError = ref(db ? '' : 'Activities are currently unavailable. Please try again later.')
+export const registrations = ref([])
+export const registrationsLoading = ref(false)
+export const registrationsError = ref('')
+if (db) onSnapshot(collection(db, 'gmcEvents'), (snapshot) => {
+  events.splice(0, events.length, ...snapshot.docs.map((item) => ({ ...item.data(), id: item.id })))
+  eventsLoading.value = false
+  eventsError.value = ''
+}, () => {
+  eventsLoading.value = false
+  eventsError.value = 'Activities could not be loaded. Please check your connection and reload.'
+})
+let stopRegistrations = () => {}
+watch(() => [currentUser.value?.id, currentUser.value?.role], () => {
+  stopRegistrations()
+  registrations.value = []
+  registrationsError.value = ''
+  registrationsLoading.value = false
+  const user = currentUser.value
+  if (!user || !db) return
+  registrationsLoading.value = true
+  const source = collection(db, 'gmcRegistrations')
+  const selection = user.role === 'organiser' ? source : query(source, where('userId', '==', user.id))
+  stopRegistrations = onSnapshot(selection, (snapshot) => {
+    registrations.value = snapshot.docs.map((item) => ({ ...item.data(), id: item.id }))
+      .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
+    registrationsLoading.value = false
+  }, () => {
+    registrations.value = []
+    registrationsLoading.value = false
+    registrationsError.value = 'Registrations could not be loaded. Please sign in again or retry later.'
+  })
+}, { immediate: true })
+export async function addRegistration(registration) {
+  const user = currentUser.value
+  if (!user) throw new Error('Please sign in to register for an activity.')
+  const event = events.find((item) => item.id === registration.eventId)
+  if (!event) throw new Error('Please select an available activity.')
+  await addDoc(collection(requireDatabase(), 'gmcRegistrations'), {
+    ...registration, email: user.email, userId: user.id,
+    eventTitle: event.title, status: 'Waiting', createdAt: serverTimestamp(),
+  })
 }
-
-export const saveStoredRegistrations = (registrations) => {
-  try {
-    if (typeof localStorage === 'undefined') {
-      return
-    }
-
-    localStorage.setItem(registrationsStorageKey, JSON.stringify(registrations))
-  } catch {
-    return
-  }
+export async function setRegistrationStatus(id, status) {
+  await updateDoc(doc(requireDatabase(), 'gmcRegistrations', id), { status })
+}
+export async function removeRegistration(id) {
+  await deleteDoc(doc(requireDatabase(), 'gmcRegistrations', id))
 }

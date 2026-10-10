@@ -1,11 +1,13 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { events, loadStoredRegistrations, saveStoredRegistrations } from '../data/events'
+import { events, eventsLoading, eventsError, registrations, registrationsLoading, registrationsError, addRegistration } from '../data/events'
+import { currentUser } from '../data/auth'
 import { cleanEmail, cleanLongText, cleanText } from '../data/security'
 
 const route = useRoute()
-const registrations = ref(loadStoredRegistrations())
+const submitting = ref(false)
+const registrationError = ref('')
 const registrationMessage = ref('')
 const activitySearch = ref('')
 
@@ -26,7 +28,7 @@ const formErrors = reactive({
 })
 
 const selectedEvent = computed(() =>
-  events.find((event) => event.id === Number(registrationForm.eventId)),
+  events.find((event) => event.id === String(registrationForm.eventId)),
 )
 
 const activitySearchResults = computed(() => {
@@ -49,7 +51,7 @@ const chooseActivity = (event) => {
 }
 
 const chooseActivityFromRoute = () => {
-  const eventFromRoute = events.find((event) => event.id === Number(route.query.activityId))
+  const eventFromRoute = events.find((event) => event.id === String(route.query.activityId))
 
   if (eventFromRoute) {
     chooseActivity(eventFromRoute)
@@ -59,7 +61,7 @@ const chooseActivityFromRoute = () => {
 chooseActivityFromRoute()
 
 watch(
-  () => route.query.activityId,
+  () => [route.query.activityId, events.length],
   () => {
     chooseActivityFromRoute()
   },
@@ -101,8 +103,8 @@ const validateForm = () => {
 }
 
 const resetRegistrationForm = () => {
-  registrationForm.fullName = ''
-  registrationForm.email = ''
+  registrationForm.fullName = currentUser.value?.fullName || ''
+  registrationForm.email = currentUser.value?.email || ''
   registrationForm.suburb = ''
   registrationForm.eventId = ''
   registrationForm.reason = ''
@@ -111,27 +113,33 @@ const resetRegistrationForm = () => {
   })
 }
 
-const submitRegistration = () => {
+watch(currentUser, (user) => {
+  registrationForm.fullName = user?.fullName || ''
+  registrationForm.email = user?.email || ''
+}, { immediate: true })
+
+const submitRegistration = async () => {
+  if (submitting.value) return
   registrationMessage.value = ''
-
-  if (!validateForm()) {
-    return
-  }
-
+  registrationError.value = ''
+  if (!currentUser.value) { registrationError.value = 'Please sign in to register.'; return }
+  if (!validateForm()) return
   const registration = {
-    id: Date.now(),
+    eventId: selectedEvent.value.id,
     fullName: cleanText(registrationForm.fullName),
-    email: cleanEmail(registrationForm.email),
     suburb: cleanText(registrationForm.suburb),
-    eventTitle: selectedEvent.value.title,
     reason: cleanLongText(registrationForm.reason),
-    status: 'Waiting',
   }
-
-  registrations.value.unshift(registration)
-  saveStoredRegistrations(registrations.value)
-  registrationMessage.value = `Thanks, ${registration.fullName}. Your interest in ${registration.eventTitle} has been recorded.`
-  resetRegistrationForm()
+  submitting.value = true
+  try {
+    await addRegistration(registration)
+    registrationMessage.value = `Thanks, ${registration.fullName}. Your interest has been saved.`
+    resetRegistrationForm()
+    registrationForm.fullName = currentUser.value?.fullName || ''
+    registrationForm.email = currentUser.value?.email || ''
+  } catch {
+    registrationError.value = 'Your registration could not be saved. Check your connection and try again.'
+  } finally { submitting.value = false }
 }
 </script>
 
@@ -149,6 +157,8 @@ const submitRegistration = () => {
 
           <div class="activity-picker">
             <h2>Find an activity</h2>
+            <p v-if="eventsLoading" role="status">Loading activities…</p>
+            <p v-if="eventsError" class="alert alert-danger" role="alert">{{ eventsError }}</p>
 
             <label class="form-label" for="activity-search">Search activity</label>
             <input
@@ -186,7 +196,7 @@ const submitRegistration = () => {
               </article>
             </div>
 
-            <div v-else class="empty-state compact-empty-state">
+            <div v-else-if="!eventsLoading && !eventsError" class="empty-state compact-empty-state">
               <h3>No activities found.</h3>
               <p>Try another suburb, title, or activity type.</p>
             </div>
@@ -196,6 +206,8 @@ const submitRegistration = () => {
         <div class="col-12 col-lg-7 join-form-column">
           <form class="registration-form" novalidate @submit.prevent="submitRegistration">
             <h2>Register your interest</h2>
+            <p v-if="!currentUser" class="alert alert-info"><RouterLink to="/auth">Sign in or create an account</RouterLink> to register for an activity.</p>
+            <p v-if="registrationError" class="alert alert-danger" role="alert">{{ registrationError }}</p>
 
             <div v-if="registrationMessage" class="alert alert-success" role="status">
               {{ registrationMessage }}
@@ -225,6 +237,7 @@ const submitRegistration = () => {
                   id="full-name"
                   v-model="registrationForm.fullName"
                   class="form-control"
+                  maxlength="100"
                   :class="{ 'is-invalid': formErrors.fullName }"
                   type="text"
                   autocomplete="name"
@@ -241,6 +254,7 @@ const submitRegistration = () => {
                 <input
                   id="email"
                   v-model="registrationForm.email"
+                  readonly
                   class="form-control"
                   :class="{ 'is-invalid': formErrors.email }"
                   type="email"
@@ -258,6 +272,7 @@ const submitRegistration = () => {
                 <input
                   id="suburb"
                   v-model="registrationForm.suburb"
+                  maxlength="100"
                   class="form-control"
                   :class="{ 'is-invalid': formErrors.suburb }"
                   type="text"
@@ -275,6 +290,7 @@ const submitRegistration = () => {
                 <textarea
                   id="reason"
                   v-model="registrationForm.reason"
+                  maxlength="2000"
                   class="form-control"
                   :class="{ 'is-invalid': formErrors.reason }"
                   rows="4"
@@ -291,8 +307,8 @@ const submitRegistration = () => {
             </div>
 
             <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
-              <button class="btn btn-success btn-lg" type="submit">Submit registration</button>
-              <button class="btn btn-outline-dark btn-lg" type="button" @click="resetRegistrationForm">
+              <button class="btn btn-success btn-lg" type="submit" :disabled="submitting || !currentUser || !selectedEvent">{{ submitting ? 'Saving…' : 'Submit registration' }}</button>
+              <button class="btn btn-outline-dark btn-lg" type="button" :disabled="submitting" @click="resetRegistrationForm">
                 Clear form
               </button>
             </div>
@@ -300,8 +316,10 @@ const submitRegistration = () => {
         </div>
       </div>
 
+      <p v-if="registrationsLoading" role="status">Loading registrations…</p>
+      <p v-if="registrationsError" class="alert alert-danger" role="alert">{{ registrationsError }}</p>
       <div v-if="registrations.length > 0" class="registrations-panel">
-        <h2>Recent registrations</h2>
+        <h2>{{ currentUser?.role === 'organiser' ? 'Recent registrations' : 'Your registrations' }}</h2>
 
         <div class="row g-3">
           <div v-for="registration in registrations" :key="registration.id" class="col-12 col-lg-6">

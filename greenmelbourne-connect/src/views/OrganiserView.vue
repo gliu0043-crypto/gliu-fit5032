@@ -2,10 +2,11 @@
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { currentUser, roleLabels } from '../data/auth'
-import { loadStoredRegistrations, saveStoredRegistrations } from '../data/events'
+import { registrations, registrationsLoading, registrationsError, setRegistrationStatus, removeRegistration } from '../data/events'
 import { safeRegistrationStatus } from '../data/security'
 
-const registrations = ref(loadStoredRegistrations())
+const actionError = ref('')
+const pendingId = ref(null)
 
 const isOrganiser = computed(() => currentUser.value?.role === 'organiser')
 
@@ -17,26 +18,22 @@ const contactedCount = computed(
   () => registrations.value.filter((registration) => registration.status === 'Contacted').length,
 )
 
-const saveRegistrations = () => {
-  saveStoredRegistrations(registrations.value)
+const updateRegistrationStatus = async (registration, status) => {
+  if (!isOrganiser.value || pendingId.value) return
+  actionError.value = ''
+  pendingId.value = registration.id
+  try { await setRegistrationStatus(registration.id, safeRegistrationStatus(status)) }
+  catch { actionError.value = 'The status could not be saved. Please try again.' }
+  finally { pendingId.value = null }
 }
-
-const updateRegistrationStatus = (registration, status) => {
-  if (!isOrganiser.value) {
-    return
-  }
-
-  registration.status = safeRegistrationStatus(status)
-  saveRegistrations()
-}
-
-const deleteRegistration = (registrationId) => {
-  if (!isOrganiser.value) {
-    return
-  }
-
-  registrations.value = registrations.value.filter((registration) => registration.id !== registrationId)
-  saveRegistrations()
+const deleteRegistration = async (registrationId) => {
+  if (!isOrganiser.value || pendingId.value) return
+  if (!window.confirm('Delete this registration? This cannot be undone.')) return
+  actionError.value = ''
+  pendingId.value = registrationId
+  try { await removeRegistration(registrationId) }
+  catch { actionError.value = 'The registration could not be deleted. Please try again.' }
+  finally { pendingId.value = null }
 }
 </script>
 
@@ -67,6 +64,8 @@ const deleteRegistration = (registrationId) => {
       </div>
 
       <template v-else>
+        <p v-if="registrationsLoading" role="status">Loading registrations…</p>
+        <p v-if="registrationsError || actionError" class="alert alert-danger" role="alert">{{ registrationsError || actionError }}</p>
         <div class="organiser-summary-grid">
           <article class="summary-card">
             <p class="panel-label">Total registrations</p>
@@ -82,7 +81,7 @@ const deleteRegistration = (registrationId) => {
           </article>
         </div>
 
-        <div v-if="registrations.length === 0" class="empty-state">
+        <div v-if="!registrationsLoading && !registrationsError && registrations.length === 0" class="empty-state">
           <h3>No registrations yet.</h3>
           <p>New event interest forms will appear here after community members submit them.</p>
           <RouterLink class="btn btn-outline-dark" to="/join">Open join form</RouterLink>
@@ -115,6 +114,8 @@ const deleteRegistration = (registrationId) => {
                     <select
                       class="form-select form-select-sm"
                       :value="registration.status || 'Waiting'"
+                      :disabled="pendingId !== null"
+                      :aria-label="`Follow-up status for ${registration.fullName}`"
                       @change="updateRegistrationStatus(registration, $event.target.value)"
                     >
                       <option value="Waiting">Waiting</option>
@@ -125,6 +126,7 @@ const deleteRegistration = (registrationId) => {
                     <button
                       class="btn btn-outline-danger btn-sm"
                       type="button"
+                      :disabled="pendingId !== null"
                       @click="deleteRegistration(registration.id)"
                     >
                       Delete

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { events } from '../data/events'
+import { events, eventsLoading, eventsError } from '../data/events'
 
 const searchText = ref('')
 const selectedType = ref('All')
@@ -95,6 +95,8 @@ const clearFilters = () => {
         </div>
       </form>
 
+      <p v-if="eventsLoading" role="status">Loading activities…</p>
+      <p v-if="eventsError" class="alert alert-danger" role="alert">{{ eventsError }}</p>
       <div class="results-bar">
         <p>{{ resultSummary }}</p>
       </div>
@@ -139,7 +141,7 @@ const clearFilters = () => {
         </div>
       </div>
 
-      <div v-else class="empty-state">
+      <div v-else-if="!eventsLoading && !eventsError" class="empty-state">
         <h2>No activities match your search.</h2>
         <p>Try changing the suburb, activity type, or search keywords.</p>
         <button class="btn btn-success" type="button" @click="clearFilters">Show all activities</button>

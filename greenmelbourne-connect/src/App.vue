@@ -1,9 +1,11 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { currentUser, logoutUser } from './data/auth'
 
 const route = useRoute()
+const router = useRouter()
+const logoutError = ref('')
 const isNavOpen = ref(false)
 
 const navLinks = [
@@ -12,8 +14,10 @@ const navLinks = [
   { label: 'Join Event', to: '/join' },
 ]
 
-const handleLogout = () => {
-  logoutUser()
+const handleLogout = async () => {
+  const result = await logoutUser()
+  logoutError.value = result.success ? '' : result.message
+  if (result.success && route.name === 'organiser') await router.replace('/auth')
 }
 
 watch(
@@ -87,6 +91,7 @@ watch(
     </header>
 
     <main>
+      <div v-if="logoutError" class="container alert alert-danger" role="alert">{{ logoutError }}</div>
       <RouterView />
     </main>
 

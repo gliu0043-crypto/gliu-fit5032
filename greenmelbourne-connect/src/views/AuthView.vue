@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { currentUser, loginUser, logoutUser, registerUser, roleLabels } from '../data/auth'
+import { currentUser, loginUser, logoutUser, registerUser, roleLabels, authBusy, authLoading, authError } from '../data/auth'
 
 const activePanel = ref('login')
 const authMessage = ref('')
@@ -16,7 +16,6 @@ const registerForm = reactive({
   fullName: '',
   email: '',
   password: '',
-  role: 'member',
 })
 
 const loginErrors = reactive({
@@ -67,7 +66,6 @@ const resetRegisterForm = () => {
   registerForm.fullName = ''
   registerForm.email = ''
   registerForm.password = ''
-  registerForm.role = 'member'
 }
 
 const handleLogin = async () => {
@@ -101,9 +99,9 @@ const handleRegister = async () => {
   }
 }
 
-const handleLogout = () => {
-  logoutUser()
-  setAuthMessage('You have logged out.', 'success')
+const handleLogout = async () => {
+  const result = await logoutUser()
+  setAuthMessage(result.message, result.success ? 'success' : 'danger')
 }
 </script>
 
@@ -120,6 +118,8 @@ const handleLogout = () => {
       </div>
 
       <div class="auth-layout">
+        <p v-if="authLoading" role="status">Loading your account…</p>
+        <div v-if="authError" class="alert alert-danger" role="alert">{{ authError }} <button type="button" class="btn btn-link" :disabled="authBusy" @click="handleLogout">Sign out and retry</button></div>
         <div v-if="authMessage" class="alert" :class="`alert-${authMessageType}`" role="status">
           {{ authMessage }}
         </div>
@@ -147,7 +147,7 @@ const handleLogout = () => {
           </div>
         </div>
 
-        <template v-else>
+        <template v-else-if="!authLoading">
           <div class="auth-switch" role="tablist" aria-label="Account access options">
             <button
               class="auth-switch-button"
@@ -202,7 +202,7 @@ const handleLogout = () => {
               </div>
             </div>
 
-            <button class="btn btn-success btn-lg w-100" type="submit">Login</button>
+            <button class="btn btn-success btn-lg w-100" type="submit" :disabled="authBusy || authLoading">{{ authBusy ? 'Signing in…' : 'Login' }}</button>
           </form>
 
           <form v-else class="auth-panel" novalidate @submit.prevent="handleRegister">
@@ -213,6 +213,7 @@ const handleLogout = () => {
               <input
                 id="register-name"
                 v-model="registerForm.fullName"
+                maxlength="100"
                 class="form-control"
                 :class="{ 'is-invalid': registerErrors.fullName }"
                 type="text"
@@ -240,14 +241,7 @@ const handleLogout = () => {
               </div>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label" for="register-role">Account type</label>
-              <select id="register-role" v-model="registerForm.role" class="form-select">
-                <option value="member">Community member</option>
-                <option value="organiser">Organiser</option>
-              </select>
-              <p class="form-hint">Organiser accounts can manage submitted event registrations.</p>
-            </div>
+            <p class="form-hint">New accounts join as community members. Organiser access is assigned by the site administrator.</p>
 
             <div class="mb-4">
               <label class="form-label" for="register-password">Password</label>
@@ -265,7 +259,7 @@ const handleLogout = () => {
               </div>
             </div>
 
-            <button class="btn btn-success btn-lg w-100" type="submit">Create account</button>
+            <button class="btn btn-success btn-lg w-100" type="submit" :disabled="authBusy || authLoading">{{ authBusy ? 'Creating account…' : 'Create account' }}</button>
           </form>
         </template>
       </div>

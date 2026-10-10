@@ -5,7 +5,7 @@ import ActivityDetailView from '../views/ActivityDetailView.vue'
 import JoinView from '../views/JoinView.vue'
 import AuthView from '../views/AuthView.vue'
 import OrganiserView from '../views/OrganiserView.vue'
-import { currentUser } from '../data/auth'
+import { authReady, currentUser } from '../data/auth'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -43,7 +43,8 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
+  if (to.name === 'organiser') await authReady
   if (to.name === 'organiser' && currentUser.value?.role !== 'organiser') {
     return { name: 'auth' }
   }

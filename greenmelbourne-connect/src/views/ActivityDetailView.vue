@@ -2,13 +2,15 @@
 import { computed, reactive, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { currentUser } from '../data/auth'
-import { events } from '../data/events'
-import { addRating, ratings } from '../data/ratings'
+import { events, eventsLoading, eventsError } from '../data/events'
+import { addRating, ratings, ratingsError } from '../data/ratings'
 import { cleanLongText, cleanText } from '../data/security'
 
 const route = useRoute()
-const event = computed(() => events.find((activity) => activity.id === Number(route.params.id)))
+const event = computed(() => events.find((activity) => activity.id === String(route.params.id)))
 const ratingMessage = ref('')
+const ratingError = ref('')
+const submitting = ref(false)
 
 const ratingForm = reactive({
   score: '',
@@ -70,15 +72,19 @@ const resetRatingForm = () => {
   })
 }
 
-const submitRating = () => {
+const submitRating = async () => {
+  if (submitting.value) return
+  ratingError.value = ''
+  if (!currentUser.value) { ratingError.value = 'Please sign in to rate an activity.'; return }
   ratingMessage.value = ''
 
   if (!event.value || !validateRating()) {
     return
   }
 
-  addRating({
-    id: Date.now(),
+  submitting.value = true
+  try {
+  await addRating({
     eventId: event.value.id,
     score: Number(ratingForm.score),
     reviewerName: reviewerName.value,
@@ -88,12 +94,16 @@ const submitRating = () => {
 
   ratingMessage.value = 'Thanks. Your activity rating has been saved.'
   resetRatingForm()
+  } catch { ratingError.value = 'Your rating could not be saved. Please try again.' }
+  finally { submitting.value = false }
 }
 </script>
 
 <template>
   <section class="content-section page-section">
     <div class="container">
+      <p v-if="eventsLoading" role="status">Loading activity…</p>
+      <p v-if="eventsError" class="alert alert-danger" role="alert">{{ eventsError }}</p>
       <div v-if="event" class="row g-4 align-items-start">
         <div class="col-12 col-lg-7">
           <p class="eyebrow">{{ event.type }}</p>
@@ -141,6 +151,7 @@ const submitRating = () => {
           <div class="rating-panel h-100">
             <p class="panel-label">Activity rating</p>
             <h2>{{ averageRatingText }}</h2>
+            <p v-if="ratingsError" class="alert alert-danger" role="alert">{{ ratingsError }}</p>
             <p>
               {{ eventRatings.length }}
               {{ eventRatings.length === 1 ? 'rating' : 'ratings' }} submitted for this activity.
@@ -159,6 +170,9 @@ const submitRating = () => {
         <div class="col-12 col-lg-7">
           <form class="rating-panel" novalidate @submit.prevent="submitRating">
             <h2>Rate this activity</h2>
+            <p v-if="!currentUser" class="alert alert-info"><RouterLink to="/auth">Sign in</RouterLink> to rate this activity.</p>
+            <p v-else class="form-hint">Submitting again updates your existing rating.</p>
+            <p v-if="ratingError" class="alert alert-danger" role="alert">{{ ratingError }}</p>
 
             <div v-if="ratingMessage" class="alert alert-success" role="status">
               {{ ratingMessage }}
@@ -189,22 +203,7 @@ const submitRating = () => {
               </div>
             </fieldset>
 
-            <div v-if="!currentUser" class="mb-3">
-              <label class="form-label" for="reviewer-name">Your name</label>
-              <input
-                id="reviewer-name"
-                v-model="ratingForm.reviewerName"
-                class="form-control"
-                :class="{ 'is-invalid': ratingErrors.reviewerName }"
-                type="text"
-                @input="ratingErrors.reviewerName = ''"
-              >
-              <div v-if="ratingErrors.reviewerName" class="invalid-feedback">
-                {{ ratingErrors.reviewerName }}
-              </div>
-            </div>
-
-            <div v-else class="selected-activity mb-3">
+            <div v-if="currentUser" class="selected-activity mb-3">
               <p class="panel-label">Reviewer</p>
               <h3>{{ currentUser.fullName }}</h3>
             </div>
@@ -214,6 +213,7 @@ const submitRating = () => {
               <textarea
                 id="rating-comment"
                 v-model="ratingForm.comment"
+                maxlength="2000"
                 class="form-control"
                 :class="{ 'is-invalid': ratingErrors.comment }"
                 rows="4"
@@ -224,12 +224,12 @@ const submitRating = () => {
               </div>
             </div>
 
-            <button class="btn btn-success btn-lg" type="submit">Submit rating</button>
+            <button class="btn btn-success btn-lg" type="submit" :disabled="submitting || !currentUser">{{ submitting ? 'Saving…' : 'Submit rating' }}</button>
           </form>
         </div>
       </div>
 
-      <div v-else class="empty-state">
+      <div v-else-if="!eventsLoading && !eventsError" class="empty-state">
         <h1>Activity not found.</h1>
         <p>The selected activity could not be found in the current activity list.</p>
         <RouterLink class="btn btn-success" to="/activities">View all activities</RouterLink>
