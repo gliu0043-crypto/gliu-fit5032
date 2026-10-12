@@ -10,9 +10,11 @@
     "dev:emulator": "vite --mode emulator --host 127.0.0.1",
     "emulators": "firebase emulators:start --project demo-greenmelbourne --only auth,firestore",
     "test:rules": "node --test tests/firestore.rules.test.mjs",
-    "test": "firebase emulators:exec --project demo-greenmelbourne --only auth,firestore \"npm run test:rules && node --test tests/auth.integration.test.mjs\"",
+    "test": "npm run test:tables && firebase emulators:exec --project demo-greenmelbourne --only auth,firestore \"npm run test:rules && node --test tests/auth.integration.test.mjs\"",
     "prebuild": "node scripts/check-config.mjs",
-    "deploy": "npm run build && firebase deploy --only firestore:rules,hosting --project fit5032-9edfc"
+    "deploy": "npm run build && firebase deploy --only firestore:rules,hosting --project fit5032-9edfc",
+    "test:tables": "node --test tests/data-table.test.mjs",
+    "seed:tables": "node scripts/seed-table-demo.mjs"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
