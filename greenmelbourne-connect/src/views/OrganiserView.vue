@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import InteractiveTable from '../components/InteractiveTable.vue'
+import EmailComposer from '../components/EmailComposer.vue'
 import { currentUser, roleLabels } from '../data/auth'
 import {
   events, eventsLoading, eventsError,
@@ -129,6 +130,7 @@ async function deleteRegistration(registration) {
             </button>
           </template>
         </InteractiveTable>
+        <EmailComposer />
       </template>
     </div>
   </section>

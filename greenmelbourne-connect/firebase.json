@@ -1,4 +1,10 @@
 {
+  "functions": [{
+    "source": "functions",
+    "codebase": "greenmelbourne",
+    "predeploy": ["node scripts/prepare-functions.mjs"],
+    "ignore": ["node_modules", ".git", "*.log", ".env*", ".secret.local"]
+  }],
   "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
   "hosting": {
     "site": "greenmelbourne-connect-801602918282",
