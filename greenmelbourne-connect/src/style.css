@@ -738,6 +738,33 @@ p {
   background: #173f2f;
 }
 
+.trip-panel, .trip-summary {
+  background: white;
+  padding: 1.4rem;
+  border: 1px solid #dce5de;
+  border-radius: 16px;
+}
+.trip-panel h2, .trip-summary h2 { font-size: 1.2rem; }
+.trip-step { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #dce5de; }
+.trip-start, .trip-destination { padding: 0.85rem; background: #eef5ef; border-radius: 8px; overflow-wrap: anywhere; }
+.trip-start p, .trip-destination p { margin: 0.4rem 0; }
+.place-results { list-style: none; padding: 0; margin: 1rem 0; }
+.place-results button { width: 100%; text-align: left; background: #fff; border: 1px solid #dce5de; border-radius: 6px; padding: 0.8rem; margin-bottom: 0.5rem; overflow-wrap: anywhere; }
+.place-results button:hover, .place-results button:focus-visible { background: #eef5ef; outline: 2px solid #216e4e; }
+.place-results span { display: block; color: #216e4e; font-size: 0.85rem; margin-top: 0.3rem; }
+.activity-map { height: 520px; border: 1px solid #cbd9cd; border-radius: 14px; z-index: 0; }
+.map-placeholder { min-height: 360px; display: grid; place-items: center; padding: 2rem; background: #e6ece5; border-radius: 14px; text-align: center; }
+.map-legend { font-size: 0.85rem; color: #435047; }
+.trip-marker { border: 2px solid white; border-radius: 50%; text-align: center; color: white; background: #216e4e; font-weight: 800; box-shadow: 0 1px 5px #0005; }
+.trip-marker span { line-height: 24px; }
+.trip-marker-selected { background: #a44915; }
+.trip-marker-start { background: #245bb2; }
+.map-popup-button { display: block; background: #eef5ef; border: 1px solid #cbd9cd; border-radius: 4px; padding: 0.5rem; margin-top: 0.6rem; max-width: 230px; text-align: left; color: #173f2f; }
+.trip-metrics { display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 1.6rem; color: #173f2f; margin-bottom: 0.7rem; }
+.trip-summary p { overflow-wrap: anywhere; }
+@media (min-width: 992px) { .map-column { position: sticky; top: 95px; } }
+@media (max-width: 575.98px) { .activity-map { height: 360px; } }
+
 .site-footer p {
   margin: 0;
   color: #f4fbf7;

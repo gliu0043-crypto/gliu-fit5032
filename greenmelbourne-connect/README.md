@@ -25,7 +25,7 @@ Both tables provide ascending/descending column sorting, a global search, indivi
 
 All filtering and pagination happens in the browser over the existing Firestore snapshot. This is suitable for the coursework dataset; larger datasets would require server-side query pagination. A table with 10 or fewer records correctly disables Next. At the project owner's request, the hosted activity catalogue now contains 30 demonstration activities, giving the organiser Activities table three pages of 10. No sample registrations were added to production.
 
-Attachment email/cloud functions are deployed and the owner has verified real receipt with a readable TXT attachment. Map features remain pending for the Credit target.
+Attachment email/cloud functions are deployed and the owner has verified real receipt with a readable TXT attachment. Map features are also deployed and passed the owner's guided manual acceptance for the Credit target on 15 October 2026.
 
 ## Day three deployed and core acceptance passed — BR D.2 and E.1
 
@@ -120,6 +120,48 @@ The old Local Storage accounts are not Firebase accounts: users must register on
 
 The activity catalogue is stored in `scripts/data/events.json` and has been seeded in Firestore. On 12 October 2026, 27 activities were added at the project owner's request, bringing the total to 30 across 28 suburbs and three activity types. The original three records and their IDs were preserved. All dates are in October–December 2026; these are fictional coursework activities, not verified public events. The additional activity titles and descriptions were drafted with AI assistance (Codex), with date, field and uniqueness validation. No registrations, ratings or user profiles were changed. Firestore subscriptions load the new activities without a new Hosting deployment.
 
+## Day four deployed and accepted — BR E.2
+
+**Status: eight map tests and production build pass. Geoapify is configured and Hosting was deployed on 15 October 2026. The owner completed all nine guided acceptance checks on the deployed website on 15 October 2026 and authorised the Day-four Git commit and push after acceptance. Commit title: `Add activity maps and route planning with Geoapify`.**
+
+The new `/map` page provides Melbourne place/address search with a selectable starting point, plus walking/cycling routing to an activity. Leaflet draws Geoapify road/path geometry, distance and estimated duration. Searches require an explicit submit, repeated searches are cached in memory, and changing the start, destination or mode cancels stale requests and clears old routes. Missing configuration, provider failures, empty searches and tile errors have visible messages. Activity details link directly to a selected map destination. Map code is loaded separately from the main page.
+
+The 30 existing activities use approximate fictional suburb meeting points in `src/data/activityLocations.js`. The UI labels these as coursework examples, not confirmed venues. Production Firestore data is unchanged. Search text and trip coordinates are sent to Geoapify; trips are not stored in Firestore or Local Storage. The map includes Geoapify and OpenStreetMap attribution.
+
+Setup:
+
+1. Create a free `GreenMelbourne Connect` project at [Geoapify MyProjects](https://myprojects.geoapify.com/).
+2. Restrict its browser key's **Allowed HTTP referrers** to the production Hosting website and local development origins. Geoapify accepts regular-expression patterns. Verify restrictions through the actual website after saving; CORS alone is not an access restriction. See [API key restrictions](https://myprojects.geoapify.com/help/api-keys/).
+3. Add `VITE_GEOAPIFY_API_KEY` to ignored `.env.local`, then restart Vite. The production configuration check requires this key. Browser keys are visible in the built app and need referrer restrictions. Do not commit unrestricted keys or include them in screenshots.
+4. Run `npm run test:map` and `npm run build`. Validate live tiles, search and both travel modes before deploying Hosting. The email function does not need redeployment for the map.
+
+The configured browser key allows these HTTP referrer patterns:
+
+```text
+^https://greenmelbourne-connect-801602918282\.web\.app/.*$
+^http://(localhost|127\.0\.0\.1):(5173|5178|5179|4173)/.*$
+```
+
+Live checks on 15 October 2026 confirmed the 30-activity catalogue and map tiles. Searching `Clayton`, selecting `Clayton, VIC, Australia`, and routing to `Clayton Community Tree Planting Day` returned a walking route of 2.1 km / 30 min locally and on the deployed website. Cycling returned 2.4 km / 9 min locally. These are provider estimates and may change. Changing destination cleared the old route, Clear trip reset the controls, and a 390-pixel viewport had no horizontal overflow. A request with an unrelated referrer was rejected with HTTP 401. The key remains in ignored `.env.local`; no source files scanned for the Day-four changes contained its value.
+
+Manual acceptance (owner-reported pass on 15 October 2026):
+
+1. Map loading: Melbourne streets, green activity markers, the 30-activity count, and zoom controls work.
+2. Place search: searching `Clayton` and choosing a result sets the starting point and shows the blue S marker.
+3. Walking route: selecting `Clayton Community Tree Planting Day` and planning a route displays the route line, distance and estimated time.
+4. Cycling route: changing travel mode clears the walking result; planning again displays the cycling route and estimates.
+5. Destination change: choosing another activity clears the old result; planning again uses the new destination.
+6. Clear trip: search, start, destination, route and estimates reset; Walking is restored, Plan route is disabled, and activity markers remain.
+7. Activity detail link: opening the map from an activity detail automatically selects that activity.
+8. No results and recovery: searching `zzzzzzzzzzzz` shows a no-match message; searching `Clayton` again returns results normally.
+9. Phone/narrow layout: form and map stack without clipping or page overflow, controls remain usable, and the collapsed navigation expands.
+
+These checks demonstrate the two non-trivial BR E.2 features: place search and route planning with distance/time information. The owner's acceptance confirms the workflow; automated validation and stale-request tests provide separate coverage for error cases.
+
+Eight automated map checks pass for catalogue coverage, search boundaries/cache/validation, coordinate order and units, invalid/same-point trips, provider errors, and stale search/route cancellation. Production build passes with the existing main-bundle size warning. Mock-response tests do not establish live availability.
+
+References: [Leaflet](https://leafletjs.com/reference.html), [Geoapify geocoding](https://apidocs.geoapify.com/docs/geocoding/forward-geocoding/), [routing](https://apidocs.geoapify.com/docs/routing/), [tiles and attribution](https://apidocs.geoapify.com/docs/maps/map-tiles/). Code and fictional location labels were drafted with AI assistance (Codex); include this in the submission's AI acknowledgement.
+
 ## Local emulators and automated checks
 
 Requires Java 21+ and Firebase CLI. Tests use only project `demo-greenmelbourne`; they clear this disposable emulator database. Do not point tests at production.
@@ -128,7 +170,7 @@ Requires Java 21+ and Firebase CLI. Tests use only project `demo-greenmelbourne`
 npm test
 ```
 
-This runs 8 table-behaviour tests, 13 email tests and 6 local OAuth callback tests, starts Auth on 9199 and Firestore on 8188, runs 8 security-rule tests, 1 Firebase SDK authentication integration test and 5 durable email-store integration tests, then stops the emulators. Stop separately running emulators before this command. Permission-denied output is expected for explicitly rejected operations.
+This runs 8 table-behaviour tests, 8 map tests, 13 email tests and 6 local OAuth callback tests, starts Auth on 9199 and Firestore on 8188, runs 8 security-rule tests, 1 Firebase SDK authentication integration test and 5 durable email-store integration tests, then stops the emulators. Stop separately running emulators before this command. Permission-denied output is expected for explicitly rejected operations.
 
 For interactive emulator development, use two terminals:
 

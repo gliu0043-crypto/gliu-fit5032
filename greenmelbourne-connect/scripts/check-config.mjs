@@ -1,5 +1,9 @@
 import { loadEnv } from 'vite'
 const env = loadEnv('production', process.cwd(), 'VITE_')
+if (!/^[A-Za-z0-9_-]{20,100}$/.test(env.VITE_GEOAPIFY_API_KEY || '')) {
+  console.error('Production build requires VITE_GEOAPIFY_API_KEY in .env.local. Restrict this browser key to approved website referrers.')
+  process.exit(1)
+}
 const missing = ['API_KEY', 'AUTH_DOMAIN', 'PROJECT_ID', 'APP_ID'].filter((name) => !env[`VITE_FIREBASE_${name}`])
 if (missing.length || env.VITE_USE_FIREBASE_EMULATORS === 'true' || env.VITE_FIREBASE_PROJECT_ID?.startsWith('demo-')) {
   console.error('Production build requires real Firebase settings in .env.local and emulators disabled. Missing:', missing.join(', '))

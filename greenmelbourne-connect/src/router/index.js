@@ -11,6 +11,11 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
+      path: '/map',
+      name: 'activity-map',
+      component: () => import('../views/MapView.vue'),
+    },
+    {
       path: '/',
       name: 'home',
       component: HomeView,

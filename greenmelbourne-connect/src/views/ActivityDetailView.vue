@@ -119,6 +119,7 @@ const submitRating = async () => {
             </RouterLink>
             <RouterLink class="btn btn-outline-dark btn-lg" to="/activities">Back to activities</RouterLink>
           </div>
+          <RouterLink class="btn btn-outline-success mt-3" :to="{ name: 'activity-map', query: { activityId: event.id } }">Plan a route to this activity</RouterLink>
         </div>
 
         <div class="col-12 col-lg-5">

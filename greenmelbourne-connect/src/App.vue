@@ -11,6 +11,7 @@ const isNavOpen = ref(false)
 const navLinks = [
   { label: 'Home', to: '/' },
   { label: 'Activities', to: '/activities' },
+  { label: 'Activity map', to: '/map' },
   { label: 'Join Event', to: '/join' },
 ]
 
