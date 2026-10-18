@@ -1,5 +1,6 @@
 <script setup>
 import { reactive, ref } from 'vue'
+import { focusInvalid } from '../data/accessibility'
 import { RouterLink } from 'vue-router'
 import { currentUser, loginUser, logoutUser, registerUser, roleLabels, authBusy, authLoading, authError } from '../data/auth'
 
@@ -68,10 +69,11 @@ const resetRegisterForm = () => {
   registerForm.password = ''
 }
 
-const handleLogin = async () => {
+const handleLogin = async (event) => {
   authMessage.value = ''
 
   if (!validateLoginForm()) {
+    await focusInvalid(event.currentTarget)
     return
   }
 
@@ -83,10 +85,11 @@ const handleLogin = async () => {
   }
 }
 
-const handleRegister = async () => {
+const handleRegister = async (event) => {
   authMessage.value = ''
 
   if (!validateRegisterForm()) {
+    await focusInvalid(event.currentTarget)
     return
   }
 
@@ -148,10 +151,11 @@ const handleLogout = async () => {
         </div>
 
         <template v-else-if="!authLoading">
-          <div class="auth-switch" role="tablist" aria-label="Account access options">
+          <div class="auth-switch" role="group" aria-label="Account access options">
             <button
               class="auth-switch-button"
               :class="{ active: activePanel === 'login' }"
+              :aria-pressed="activePanel === 'login'"
               type="button"
               @click="activePanel = 'login'"
             >
@@ -160,6 +164,7 @@ const handleLogout = async () => {
             <button
               class="auth-switch-button"
               :class="{ active: activePanel === 'register' }"
+              :aria-pressed="activePanel === 'register'"
               type="button"
               @click="activePanel = 'register'"
             >
@@ -174,6 +179,9 @@ const handleLogout = async () => {
               <label class="form-label" for="login-email">Email</label>
               <input
                 id="login-email"
+                required
+                :aria-invalid="Boolean(loginErrors.email)"
+                :aria-describedby="loginErrors.email ? 'login-email-error' : undefined"
                 v-model="loginForm.email"
                 class="form-control"
                 :class="{ 'is-invalid': loginErrors.email }"
@@ -181,7 +189,7 @@ const handleLogout = async () => {
                 autocomplete="email"
                 @input="loginErrors.email = ''"
               >
-              <div v-if="loginErrors.email" class="invalid-feedback">
+              <div v-if="loginErrors.email" id="login-email-error" class="invalid-feedback">
                 {{ loginErrors.email }}
               </div>
             </div>
@@ -190,6 +198,9 @@ const handleLogout = async () => {
               <label class="form-label" for="login-password">Password</label>
               <input
                 id="login-password"
+                required
+                :aria-invalid="Boolean(loginErrors.password)"
+                :aria-describedby="loginErrors.password ? 'login-password-error' : undefined"
                 v-model="loginForm.password"
                 class="form-control"
                 :class="{ 'is-invalid': loginErrors.password }"
@@ -197,7 +208,7 @@ const handleLogout = async () => {
                 autocomplete="current-password"
                 @input="loginErrors.password = ''"
               >
-              <div v-if="loginErrors.password" class="invalid-feedback">
+              <div v-if="loginErrors.password" id="login-password-error" class="invalid-feedback">
                 {{ loginErrors.password }}
               </div>
             </div>
@@ -212,6 +223,9 @@ const handleLogout = async () => {
               <label class="form-label" for="register-name">Full name</label>
               <input
                 id="register-name"
+                required
+                :aria-invalid="Boolean(registerErrors.fullName)"
+                :aria-describedby="registerErrors.fullName ? 'register-name-error' : undefined"
                 v-model="registerForm.fullName"
                 maxlength="100"
                 class="form-control"
@@ -220,7 +234,7 @@ const handleLogout = async () => {
                 autocomplete="name"
                 @input="registerErrors.fullName = ''"
               >
-              <div v-if="registerErrors.fullName" class="invalid-feedback">
+              <div v-if="registerErrors.fullName" id="register-name-error" class="invalid-feedback">
                 {{ registerErrors.fullName }}
               </div>
             </div>
@@ -229,6 +243,9 @@ const handleLogout = async () => {
               <label class="form-label" for="register-email">Email</label>
               <input
                 id="register-email"
+                required
+                :aria-invalid="Boolean(registerErrors.email)"
+                :aria-describedby="registerErrors.email ? 'register-email-error' : undefined"
                 v-model="registerForm.email"
                 class="form-control"
                 :class="{ 'is-invalid': registerErrors.email }"
@@ -236,7 +253,7 @@ const handleLogout = async () => {
                 autocomplete="email"
                 @input="registerErrors.email = ''"
               >
-              <div v-if="registerErrors.email" class="invalid-feedback">
+              <div v-if="registerErrors.email" id="register-email-error" class="invalid-feedback">
                 {{ registerErrors.email }}
               </div>
             </div>
@@ -247,6 +264,9 @@ const handleLogout = async () => {
               <label class="form-label" for="register-password">Password</label>
               <input
                 id="register-password"
+                required
+                :aria-invalid="Boolean(registerErrors.password)"
+                :aria-describedby="registerErrors.password ? 'register-password-error' : undefined"
                 v-model="registerForm.password"
                 class="form-control"
                 :class="{ 'is-invalid': registerErrors.password }"
@@ -254,7 +274,7 @@ const handleLogout = async () => {
                 autocomplete="new-password"
                 @input="registerErrors.password = ''"
               >
-              <div v-if="registerErrors.password" class="invalid-feedback">
+              <div v-if="registerErrors.password" id="register-password-error" class="invalid-feedback">
                 {{ registerErrors.password }}
               </div>
             </div>

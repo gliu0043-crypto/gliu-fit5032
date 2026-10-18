@@ -7,6 +7,15 @@ const hash = value => createHash('sha256').update(value).digest('hex')
 // Store hashes and outcomes, never the message body, file, token or API key.
 export function createMailStore(db, { now = Date.now, hourlyLimit = 20 } = {}) {
   return {
+    async reserveBatch(uid, requestId, batch) {
+      const reference = db.collection('gmcEmailBatches').doc(hash(`${uid}:${requestId}`))
+      const fingerprint = hash(JSON.stringify(batch))
+      await db.runTransaction(async transaction => {
+        const previous = (await transaction.get(reference)).data()
+        if (previous && previous.fingerprint !== fingerprint) throw new EmailError(409, 'This batch or its recipients have changed. Review the inboxes before preparing a new batch.')
+        if (!previous) transaction.set(reference, { uid, fingerprint, createdAt: now() })
+      })
+    },
     async reserveSend(uid, requestId, mail) {
       const key = hash(`${uid}:${requestId}`)
       const fingerprint = hash(JSON.stringify(mail))

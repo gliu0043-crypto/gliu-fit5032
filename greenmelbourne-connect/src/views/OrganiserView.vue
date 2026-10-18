@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import InteractiveTable from '../components/InteractiveTable.vue'
 import EmailComposer from '../components/EmailComposer.vue'
+import BulkEmailComposer from '../components/BulkEmailComposer.vue'
+import ActivityStatistics from '../components/ActivityStatistics.vue'
 import { currentUser, roleLabels } from '../data/auth'
 import {
   events, eventsLoading, eventsError,
@@ -92,7 +94,9 @@ async function deleteRegistration(registration) {
           </article>
         </div>
 
-        <InteractiveTable id="activities" title="Activities" :rows="events" :columns="activityColumns"
+        <ActivityStatistics :events="events" :registrations="registrations" :loading="eventsLoading || registrationsLoading" :error="eventsError || registrationsError" />
+
+        <InteractiveTable id="activities" title="Activities" :rows="events" :columns="activityColumns" exportable
           :initial-sort="{ key: 'date', direction: 'asc' }" :loading="eventsLoading" :error="eventsError"
           description="Browse scheduled activities, locations and available places."
           empty-message="No activities have been published yet.">
@@ -105,7 +109,7 @@ async function deleteRegistration(registration) {
           <p v-if="actionError" class="alert alert-danger" role="alert">{{ actionError }}</p>
           <p v-if="actionMessage" class="alert alert-success" role="status">{{ actionMessage }}</p>
         </div>
-        <InteractiveTable id="registrations" title="Registrations" :rows="registrations" :columns="registrationColumns"
+        <InteractiveTable id="registrations" title="Registrations" :rows="registrations" :columns="registrationColumns" exportable
           :initial-sort="{ key: 'createdAt', direction: 'desc' }" :loading="registrationsLoading" :error="registrationsError"
           description="Search member details and update the follow-up status of each registration."
           empty-message="No registrations yet. New interest forms will appear here after members submit them.">
@@ -131,6 +135,7 @@ async function deleteRegistration(registration) {
           </template>
         </InteractiveTable>
         <EmailComposer />
+        <BulkEmailComposer />
       </template>
     </div>
   </section>

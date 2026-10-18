@@ -60,3 +60,14 @@ test('hourly rate limit persists, separates users and expires after one hour', a
   time += 3600001
   await store.reserveSend(uid, randomUUID(), mail)
 })
+
+test('batch manifests persist, reject changed content and never store email bodies or addresses', async () => {
+  const uid = randomUUID(), id = randomUUID(), batch = { subject: 'Private batch', resolvedRecipients: [{ to: 'private@example.test' }] }
+  await createMailStore(db).reserveBatch(uid, id, batch)
+  await createMailStore(db).reserveBatch(uid, id, batch)
+  await assert.rejects(createMailStore(db).reserveBatch(uid, id, { ...batch, subject: 'Changed' }), error => error.status === 409)
+  const docs = await db.collection('gmcEmailBatches').where('uid', '==', uid).get()
+  assert.equal(docs.size, 1)
+  assert(!JSON.stringify(docs.docs[0].data()).includes('private@example.test'))
+  assert(!JSON.stringify(docs.docs[0].data()).includes('Private batch'))
+})

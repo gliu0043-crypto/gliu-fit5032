@@ -16,7 +16,7 @@ const allowedOrigins = [
 
 export const gmcSendActivityEmail = onRequest({
   region: 'australia-southeast1',
-  memory: '256MiB', timeoutSeconds: 60,
+  memory: '256MiB', timeoutSeconds: 360,
   minInstances: 0, maxInstances: 1, cpu: 'gcf_gen1', concurrency: 1,
   secrets: [emailConfig], cors: false,
 }, async (req, res) => {

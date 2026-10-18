@@ -98,7 +98,7 @@ const clearFilters = () => {
       <p v-if="eventsLoading" role="status">Loading activities…</p>
       <p v-if="eventsError" class="alert alert-danger" role="alert">{{ eventsError }}</p>
       <div class="results-bar">
-        <p>{{ resultSummary }}</p>
+        <p role="status">{{ resultSummary }}</p>
         <RouterLink class="btn btn-outline-success" to="/map">Explore activity map</RouterLink>
       </div>
 

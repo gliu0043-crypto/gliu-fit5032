@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { createCsv, createPdf, downloadFile, exportTable } from '../data/export'
 import { TABLE_PAGE_SIZE, useDataTable } from '../composables/useDataTable'
 
 const props = defineProps({
@@ -12,9 +13,23 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   error: { type: String, default: '' },
   emptyMessage: { type: String, default: 'No records yet.' },
+  exportable: { type: Boolean, default: false },
 })
-const { search, filters, hasFilters, sortKey, sortDirection, page, pageCount, filteredRows, visibleRows, firstRow, lastRow, sortBy, goToPage, clearFilters } = useDataTable(() => props.rows, () => props.columns, props.initialSort)
+const { search, filters, hasFilters, sortKey, sortDirection, page, pageCount, filteredRows, sortedRows, visibleRows, firstRow, lastRow, sortBy, goToPage, clearFilters } = useDataTable(() => props.rows, () => props.columns, props.initialSort)
 const unavailable = computed(() => props.loading || Boolean(props.error))
+const exporting = ref(false), exportMessage = ref(''), exportError = ref('')
+async function exportRows(format) {
+  if (!props.exportable || unavailable.value || exporting.value || !sortedRows.value.length) return
+  exporting.value = true; exportMessage.value = ''; exportError.value = ''
+  const table = exportTable(sortedRows.value, props.columns)
+  const timestamp = new Date()
+  try {
+    const blob = format === 'csv' ? new Blob([createCsv(table)], { type: 'text/csv;charset=utf-8' }) : await createPdf(table, props.title, timestamp)
+    downloadFile(blob, `${props.id}-${timestamp.toISOString().slice(0, 10)}.${format}`)
+    exportMessage.value = `${table.body.length} records exported as ${format.toUpperCase()}. Check your downloads.`
+  } catch { exportError.value = 'Export could not be completed. Please retry, or use CSV.' }
+  finally { exporting.value = false }
+}
 const sortLabel = (column) => {
   const direction = sortKey.value === column.key && sortDirection.value === 'asc' ? 'descending' : 'ascending'
   return `Sort ${props.title} by ${column.label.toLowerCase()}, ${direction}`
@@ -41,6 +56,15 @@ const cellValue = (row, column) => (column.value ? column.value(row) : row[colum
       <button class="btn btn-outline-success" type="button" :disabled="!hasFilters || unavailable" @click="clearFilters">
         Clear filters<span class="visually-hidden"> for {{ title.toLowerCase() }}</span>
       </button>
+    </div>
+
+    <div v-if="exportable" class="export-toolbar">
+      <button class="btn btn-outline-success" type="button" :disabled="unavailable || exporting || !sortedRows.length" :aria-label="`Export CSV for ${title.toLowerCase()}`" @click="exportRows('csv')">Export CSV</button>
+      <button class="btn btn-outline-success" type="button" :disabled="unavailable || exporting || !sortedRows.length" :aria-label="`Export PDF for ${title.toLowerCase()}`" @click="exportRows('pdf')">Export PDF</button>
+      <span>All matching records across pages, in the current sort order.</span>
+      <p v-if="exporting" role="status">Preparing your download…</p>
+      <p v-if="exportMessage" role="status">{{ exportMessage }}</p>
+      <p v-if="exportError" role="alert">{{ exportError }}</p>
     </div>
 
     <p :id="`${id}-help`" class="table-help">Select a column heading to sort. Use the fields below each heading to filter that column.</p>
@@ -101,6 +125,8 @@ const cellValue = (row, column) => (column.value ? column.value(row) : row[colum
 </template>
 
 <style scoped>
+.export-toolbar { display: flex; gap: .7rem; flex-wrap: wrap; align-items: center; padding: .5rem 1.25rem 1rem; color: #435047; font-size: .9rem; }
+.export-toolbar p { width: 100%; margin: 0; }
 .interactive-table {
   min-width: 0;
   margin-top: 1.75rem;

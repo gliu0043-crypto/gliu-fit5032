@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { events, eventsLoading, eventsError, registrations, registrationsLoading, registrationsError, addRegistration } from '../data/events'
 import { currentUser } from '../data/auth'
+import { focusInvalid } from '../data/accessibility'
 import { cleanEmail, cleanLongText, cleanText } from '../data/security'
 
 const route = useRoute()
@@ -118,12 +119,12 @@ watch(currentUser, (user) => {
   registrationForm.email = user?.email || ''
 }, { immediate: true })
 
-const submitRegistration = async () => {
+const submitRegistration = async (event) => {
   if (submitting.value) return
   registrationMessage.value = ''
   registrationError.value = ''
   if (!currentUser.value) { registrationError.value = 'Please sign in to register.'; return }
-  if (!validateForm()) return
+  if (!validateForm()) { await focusInvalid(event.currentTarget); return }
   const registration = {
     eventId: selectedEvent.value.id,
     fullName: cleanText(registrationForm.fullName),
@@ -169,7 +170,7 @@ const submitRegistration = async () => {
               placeholder="Search by title, suburb, or type"
             >
 
-            <p class="form-hint">{{ activitySearchResults.length }} activities available</p>
+            <p class="form-hint" role="status">{{ activitySearchResults.length }} activities available</p>
 
             <div v-if="activitySearchResults.length > 0" class="activity-choice-list">
               <article
@@ -189,7 +190,7 @@ const submitRegistration = async () => {
                   >
                     View details
                   </RouterLink>
-                  <button class="btn btn-success btn-sm" type="button" @click="chooseActivity(event)">
+                  <button class="btn btn-success btn-sm" type="button" :aria-pressed="selectedEvent?.id === event.id" :aria-label="`Select activity: ${event.title}`" @click="chooseActivity(event)">
                     Select activity
                   </button>
                 </div>
@@ -216,7 +217,7 @@ const submitRegistration = async () => {
             <div class="row g-3">
               <div class="col-12">
                 <div
-                  class="selected-activity"
+                  class="selected-activity" role="status"
                   :class="{ 'selection-missing': formErrors.eventId }"
                 >
                   <p class="panel-label">Selected activity</p>
@@ -235,6 +236,9 @@ const submitRegistration = async () => {
                 <label class="form-label" for="full-name">Full name</label>
                 <input
                   id="full-name"
+                  required
+                  :aria-invalid="Boolean(formErrors.fullName)"
+                  :aria-describedby="formErrors.fullName ? 'full-name-error' : undefined"
                   v-model="registrationForm.fullName"
                   class="form-control"
                   maxlength="100"
@@ -244,7 +248,7 @@ const submitRegistration = async () => {
                   @input="validateField('fullName')"
                   @blur="validateField('fullName')"
                 >
-                <div v-if="formErrors.fullName" class="invalid-feedback">
+                <div v-if="formErrors.fullName" id="full-name-error" class="invalid-feedback">
                   {{ formErrors.fullName }}
                 </div>
               </div>
@@ -253,6 +257,9 @@ const submitRegistration = async () => {
                 <label class="form-label" for="email">Email</label>
                 <input
                   id="email"
+                  required
+                  :aria-invalid="Boolean(formErrors.email)"
+                  :aria-describedby="formErrors.email ? 'email-error' : undefined"
                   v-model="registrationForm.email"
                   readonly
                   class="form-control"
@@ -262,7 +269,7 @@ const submitRegistration = async () => {
                   @input="validateField('email')"
                   @blur="validateField('email')"
                 >
-                <div v-if="formErrors.email" class="invalid-feedback">
+                <div v-if="formErrors.email" id="email-error" class="invalid-feedback">
                   {{ formErrors.email }}
                 </div>
               </div>
@@ -271,6 +278,9 @@ const submitRegistration = async () => {
                 <label class="form-label" for="suburb">Suburb</label>
                 <input
                   id="suburb"
+                  required
+                  :aria-invalid="Boolean(formErrors.suburb)"
+                  :aria-describedby="formErrors.suburb ? 'suburb-error' : undefined"
                   v-model="registrationForm.suburb"
                   maxlength="100"
                   class="form-control"
@@ -280,7 +290,7 @@ const submitRegistration = async () => {
                   @input="validateField('suburb')"
                   @blur="validateField('suburb')"
                 >
-                <div v-if="formErrors.suburb" class="invalid-feedback">
+                <div v-if="formErrors.suburb" id="suburb-error" class="invalid-feedback">
                   {{ formErrors.suburb }}
                 </div>
               </div>
@@ -289,6 +299,9 @@ const submitRegistration = async () => {
                 <label class="form-label" for="reason">Reason for joining</label>
                 <textarea
                   id="reason"
+                  required
+                  :aria-invalid="Boolean(formErrors.reason)"
+                  :aria-describedby="formErrors.reason ? 'reason-error' : undefined"
                   v-model="registrationForm.reason"
                   maxlength="2000"
                   class="form-control"
@@ -300,7 +313,7 @@ const submitRegistration = async () => {
                 <div class="form-hint">
                   {{ registrationForm.reason.trim().length }}/20 characters minimum
                 </div>
-                <div v-if="formErrors.reason" class="invalid-feedback">
+                <div v-if="formErrors.reason" id="reason-error" class="invalid-feedback">
                   {{ formErrors.reason }}
                 </div>
               </div>

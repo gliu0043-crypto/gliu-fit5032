@@ -1,4 +1,5 @@
 export const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024
+export const MAX_BATCH_RECIPIENTS = 10
 export const ATTACHMENT_TYPES = { pdf: 'application/pdf', txt: 'text/plain', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' }
 
 export function attachmentType(name) {

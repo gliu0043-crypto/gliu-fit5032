@@ -49,13 +49,14 @@ function renderMap() {
     L.marker([location.lat, location.lon], {
       icon: icon(selected ? 'selected' : 'activity'),
       title: location.label, alt: location.label,
+      keyboard: false, // The labelled activity selector provides the same action without 30 extra tab stops.
     }).bindPopup(popup).addTo(markers)
   }
   if (props.origin) {
     const label = document.createElement('span')
     label.textContent = `Start: ${props.origin.label}`
     L.marker([props.origin.lat, props.origin.lon], {
-      icon: icon('start'), title: 'Your starting point', alt: 'Your starting point',
+      icon: icon('start'), keyboard: false, title: 'Your starting point', alt: 'Your starting point',
     }).bindPopup(label).addTo(markers)
   }
   if (props.route) {
@@ -99,7 +100,7 @@ onBeforeUnmount(() => { observer?.disconnect(); map?.remove(); map = null })
       Map tiles could not load. Check your connection or try again later.
       <button class="btn btn-outline-dark btn-sm ms-2" type="button" @click="retryTiles">Retry map</button>
     </div>
-    <div ref="container" class="activity-map" role="region" aria-label="Melbourne activity and route map"></div>
-    <p class="form-hint mt-2 mb-0">Choose an activity using its marker or the activity list. Use + and − to zoom.</p>
+    <div ref="container" class="activity-map" role="region" aria-label="Melbourne activity and route map" aria-describedby="map-keyboard-help"></div>
+    <p id="map-keyboard-help" class="form-hint mt-2 mb-0">Use the labelled activity destination list to select a venue without using the map. The trip summary provides the start, destination, distance and time as text. On the map, use arrow keys to pan, + and − to zoom, and Tab to leave.</p>
   </div>
 </template>

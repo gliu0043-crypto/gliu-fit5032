@@ -89,7 +89,7 @@ test('members cannot alter activities or access unrelated collections', async ()
   await assertSucceeds(updateDoc(doc(dbFor('admin'), 'gmcEvents', '1'), { title: 'Updated activity' }))
   await assertFails(getDocs(collection(dbFor('admin'), 'otherPrivateData')))
   // Email ledger and rate limits may only be accessed by the cloud function.
-  for (const collectionName of ['gmcEmailRequests', 'gmcEmailLimits']) {
+  for (const collectionName of ['gmcEmailRequests', 'gmcEmailLimits', 'gmcEmailBatches']) {
     await assertFails(getDocs(collection(dbFor('admin'), collectionName)))
     await assertFails(setDoc(doc(dbFor('admin'), collectionName, 'fake'), { status: 'accepted' }))
   }

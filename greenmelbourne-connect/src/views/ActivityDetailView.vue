@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { currentUser } from '../data/auth'
 import { events, eventsLoading, eventsError } from '../data/events'
 import { addRating, ratings, ratingsError } from '../data/ratings'
+import { focusInvalid } from '../data/accessibility'
 import { cleanLongText, cleanText } from '../data/security'
 
 const route = useRoute()
@@ -72,13 +73,14 @@ const resetRatingForm = () => {
   })
 }
 
-const submitRating = async () => {
+const submitRating = async (submission) => {
   if (submitting.value) return
   ratingError.value = ''
   if (!currentUser.value) { ratingError.value = 'Please sign in to rate an activity.'; return }
   ratingMessage.value = ''
 
   if (!event.value || !validateRating()) {
+    await focusInvalid(submission.currentTarget)
     return
   }
 
@@ -193,13 +195,16 @@ const submitRating = async () => {
                     class="visually-hidden"
                     type="radio"
                     name="rating-score"
+                    :aria-label="`${score} out of 5`"
+                    :aria-invalid="Boolean(ratingErrors.score)"
+                    :aria-describedby="ratingErrors.score ? 'rating-score-error' : undefined"
                     :value="String(score)"
                     @change="ratingErrors.score = ''"
                   >
                   <span>{{ score }}</span>
                 </label>
               </div>
-              <div v-if="ratingErrors.score" class="selection-error">
+              <div v-if="ratingErrors.score" id="rating-score-error" class="selection-error">
                 {{ ratingErrors.score }}
               </div>
             </fieldset>
@@ -213,6 +218,9 @@ const submitRating = async () => {
               <label class="form-label" for="rating-comment">Short feedback</label>
               <textarea
                 id="rating-comment"
+                required
+                :aria-invalid="Boolean(ratingErrors.comment)"
+                :aria-describedby="ratingErrors.comment ? 'rating-comment-error' : undefined"
                 v-model="ratingForm.comment"
                 maxlength="2000"
                 class="form-control"
@@ -220,7 +228,7 @@ const submitRating = async () => {
                 rows="4"
                 @input="ratingErrors.comment = ''"
               ></textarea>
-              <div v-if="ratingErrors.comment" class="invalid-feedback">
+              <div v-if="ratingErrors.comment" id="rating-comment-error" class="invalid-feedback">
                 {{ ratingErrors.comment }}
               </div>
             </div>

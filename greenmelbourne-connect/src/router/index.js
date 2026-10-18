@@ -4,11 +4,14 @@ import ActivitiesView from '../views/ActivitiesView.vue'
 import ActivityDetailView from '../views/ActivityDetailView.vue'
 import JoinView from '../views/JoinView.vue'
 import AuthView from '../views/AuthView.vue'
-import OrganiserView from '../views/OrganiserView.vue'
 import { authReady, currentUser } from '../data/auth'
 
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.path !== from.path) return { top: 0 }
+  },
   routes: [
     {
       path: '/map',
@@ -43,7 +46,7 @@ const router = createRouter({
     {
       path: '/organiser',
       name: 'organiser',
-      component: OrganiserView,
+      component: () => import('../views/OrganiserView.vue'),
     },
   ],
 })

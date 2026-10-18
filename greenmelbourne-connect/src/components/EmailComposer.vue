@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { currentUser } from '../data/auth'
 import { registrations, registrationsError, registrationsLoading } from '../data/events'
 import { emailConfigured, readAttachment, sendActivityEmail } from '../data/email'
+import { focusInvalid } from '../data/accessibility'
 import { validateEmailForm } from '../../shared/email'
 
 const recipient = ref('self')
@@ -30,12 +31,12 @@ function newMessage() {
   attachment.value = null
   if (fileInput.value) fileInput.value.value = ''
 }
-async function send() {
+async function send(event) {
   if (busy.value || sent.value) return
   errors.value = validateEmailForm({ recipient: recipientEmail.value, subject: subject.value, message: message.value, attachment: attachment.value })
   feedback.value = ''
   failure.value = ''
-  if (Object.keys(errors.value).length) return
+  if (Object.keys(errors.value).length) { await focusInvalid(event.currentTarget); return }
   busy.value = true
   try {
     const payload = {
@@ -71,7 +72,7 @@ async function send() {
         <div class="row g-3">
           <div class="col-12 col-lg-6">
             <label for="email-recipient" class="form-label">Recipient</label>
-            <select id="email-recipient" v-model="recipient" class="form-select" :aria-invalid="Boolean(errors.recipient)" aria-describedby="email-recipient-error">
+            <select id="email-recipient" v-model="recipient" class="form-select" :aria-invalid="Boolean(errors.recipient)" :aria-describedby="errors.recipient ? 'email-recipient-error' : undefined">
               <option value="self">My email — {{ currentUser?.email }}</option>
               <optgroup v-if="!registrationsError && !registrationsLoading" label="Registered participants">
                 <option v-for="row in registrations" :key="row.id" :value="row.id">{{ row.fullName }} — {{ row.email }} — {{ row.eventTitle }}</option>
@@ -81,17 +82,17 @@ async function send() {
           </div>
           <div class="col-12 col-lg-6">
             <label for="email-subject" class="form-label">Subject</label>
-            <input id="email-subject" v-model="subject" class="form-control" maxlength="120" :aria-invalid="Boolean(errors.subject)" aria-describedby="email-subject-error">
+            <input id="email-subject" v-model="subject" class="form-control" maxlength="120" :aria-invalid="Boolean(errors.subject)" :aria-describedby="errors.subject ? 'email-subject-error' : undefined">
             <p v-if="errors.subject" id="email-subject-error" class="field-error">{{ errors.subject }}</p>
           </div>
           <div class="col-12">
             <label for="email-message" class="form-label">Message</label>
-            <textarea id="email-message" v-model="message" class="form-control" rows="7" maxlength="5000" :aria-invalid="Boolean(errors.message)" aria-describedby="email-message-error"></textarea>
+            <textarea id="email-message" v-model="message" class="form-control" rows="7" maxlength="5000" :aria-invalid="Boolean(errors.message)" :aria-describedby="errors.message ? 'email-message-error' : undefined"></textarea>
             <p v-if="errors.message" id="email-message-error" class="field-error">{{ errors.message }}</p>
           </div>
           <div class="col-12">
             <label for="email-attachment" class="form-label">Attachment</label>
-            <input id="email-attachment" ref="fileInput" class="form-control" type="file" accept=".pdf,.txt,.png,.jpg,.jpeg" :aria-invalid="Boolean(errors.attachment)" aria-describedby="email-attachment-help email-attachment-error" @change="chooseFile">
+            <input id="email-attachment" ref="fileInput" class="form-control" type="file" accept=".pdf,.txt,.png,.jpg,.jpeg" :aria-invalid="Boolean(errors.attachment)" :aria-describedby="errors.attachment ? 'email-attachment-help email-attachment-error' : 'email-attachment-help'" @change="chooseFile">
             <p id="email-attachment-help" class="form-text">One PDF, TXT, PNG or JPG file, up to 2 MB. <a href="/activity-info-example.txt" download>Download a sample attachment</a>.</p>
             <p v-if="attachment" class="form-text">Selected: {{ attachment.name }} ({{ Math.ceil(attachment.size / 1024) }} KB)</p>
             <p v-if="errors.attachment" id="email-attachment-error" class="field-error">{{ errors.attachment }}</p>

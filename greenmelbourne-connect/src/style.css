@@ -267,6 +267,8 @@ p {
 
 .results-bar {
   display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
   justify-content: space-between;
   margin-bottom: 1.5rem;
 }
@@ -455,6 +457,8 @@ p {
   background: #dceee4;
   color: #173f2f;
 }
+
+.rating-option:focus-within { outline: 3px solid #173f2f; outline-offset: 3px; }
 
 .rating-feedback-list {
   display: grid;
@@ -820,3 +824,18 @@ p {
     padding: 0.75rem 0 0;
   }
 }
+
+/* Shared keyboard, contrast and reflow support (WCAG 2.1 AA). */
+.skip-link { position: fixed; top: .5rem; left: .5rem; z-index: 2000; padding: .8rem 1rem; background: #173f2f; color: #fff; transform: translateY(-200%); }
+.skip-link:focus { transform: none; }
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 3px solid #173f2f !important; outline-offset: 3px; }
+:where(input, select, textarea):not([type=radio]):not([type=checkbox]) { border-color: #738176 !important; }
+.form-check-input, input[type=checkbox], input[type=radio] { border-color: #738176; accent-color: #216e4e; }
+input::placeholder, textarea::placeholder { color: #5d6675 !important; opacity: 1; }
+.form-hint, .event-details dt, .rating-feedback-list span { color: #596373; }
+.selection-error, .invalid-feedback { color: #b02a37; }
+:where(h1, h2, h3, input, select, textarea, button, [tabindex]) { scroll-margin-top: 7rem; }
+h1:focus, main:focus { outline: 2px solid #216e4e; outline-offset: 4px; }
+.nav-user-name, .brand-link, h1, h2, h3 { overflow-wrap: anywhere; }
+@media (max-width: 1199.98px) { .nav-user-area { padding: .5rem .8rem; flex-wrap: wrap; } .navbar-brand { white-space: normal; max-width: calc(100% - 65px); } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }

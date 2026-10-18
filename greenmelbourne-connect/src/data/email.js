@@ -22,14 +22,14 @@ export async function sendActivityEmail(payload) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(payload.recipients ? 390000 : 30000),
     })
   } catch {
     throw new Error('The send result could not be confirmed. Check the recipient inbox before trying again to avoid duplicate emails.')
   }
   const result = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(result.error || 'The email could not be sent. Please try again later.')
-  if (result.status !== 'accepted' && result.status !== 'simulated') {
+  if (result.status !== 'accepted' && result.status !== 'simulated' && !(result.status === 'batch-complete' && Array.isArray(result.results))) {
     throw new Error('The send result could not be confirmed. Check the recipient inbox before trying again.')
   }
   return result

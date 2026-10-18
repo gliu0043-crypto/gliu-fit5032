@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
+import { createHash } from 'node:crypto'
 import nodemailer from 'nodemailer'
-import { attachmentType, MAX_ATTACHMENT_BYTES, validateEmailForm } from '../shared/email.js'
+import { attachmentType, MAX_ATTACHMENT_BYTES, MAX_BATCH_RECIPIENTS, validateEmailForm } from '../shared/email.js'
 
 const MAX_REQUEST_BYTES = Math.ceil(MAX_ATTACHMENT_BYTES * 4 / 3) + 16000
 const emailPattern = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/
@@ -63,9 +64,56 @@ async function readLimitedJson(request) {
   catch { throw new EmailError(400, 'The email request could not be read.') }
 }
 
+export function validateBatchPayload(input) {
+  if (!input || Object.keys(input).some(key => !['recipients', 'subject', 'message', 'attachment', 'requestId'].includes(key))
+    || !Array.isArray(input.recipients) || input.recipients.length < 1 || input.recipients.length > MAX_BATCH_RECIPIENTS
+    || input.recipients.some(id => typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(id))) {
+    throw new EmailError(400, `Choose between 1 and ${MAX_BATCH_RECIPIENTS} registered recipients.`)
+  }
+  const { recipients, ...rest } = input
+  const { recipient, ...validated } = validatePayload({ ...rest, recipient: 'self' })
+  return { ...validated, recipients: [...new Set(recipients)].sort() }
+}
+
+// One immutable batch manifest, plus the existing durable reservation for each
+// individual address. Replaying a batch never automatically resends an uncertain mail.
+async function processBatch(input, actor, bearer, { getRegistration, reserveBatch, reserveSend, finishSend, deliver }) {
+  const addresses = new Map()
+  for (const id of input.recipients) {
+    const row = id === 'self' ? { email: actor.email } : await getRegistration(id, bearer)
+    if (!emailPattern.test(row?.email || '')) throw new EmailError(400, 'A selected registration is no longer valid. Review the recipients before sending.')
+    const to = row.email.trim().toLowerCase()
+    if (!addresses.has(to)) addresses.set(to, { recipient: id, to })
+  }
+  const recipients = [...addresses.values()]
+  await reserveBatch(actor.uid, input.requestId, { ...input, resolvedRecipients: recipients, replyTo: actor.email })
+  const results = []
+  let stopped = false
+  for (const { recipient, to } of recipients) {
+    if (stopped) { results.push({ recipient, to, status: 'not-sent', message: 'Batch paused after a service or rate-limit error. Resume this batch later.' }); continue }
+    const requestId = createHash('sha256').update(`batch:${input.requestId}:${to}`).digest('hex')
+    const mail = { requestId, recipient, to, replyTo: actor.email, subject: input.subject, message: input.message, attachment: input.attachment }
+    let reservation
+    try {
+      reservation = await reserveSend(actor.uid, requestId, mail)
+      if (reservation.result) { results.push({ ...reservation.result, recipient }); continue }
+      const delivered = await deliver(mail)
+      const saved = { status: delivered.status, to, requestId }
+      await finishSend(reservation, saved)
+      results.push({ ...saved, recipient })
+    } catch (error) {
+      if (reservation && !reservation.result) await finishSend(reservation, null).catch(() => {})
+      results.push({ recipient, to, status: reservation || error.status === 409 ? 'unconfirmed' : 'not-sent',
+        message: error instanceof EmailError ? error.message : 'The send result could not be confirmed. Check this inbox before preparing another batch.' })
+      if (!(error instanceof EmailError) || [401, 403, 429, 502, 503].includes(error.status)) stopped = true
+    }
+  }
+  return { status: 'batch-complete', requestId: input.requestId, duplicateCount: input.recipients.length - recipients.length, results }
+}
+
 // The hosting adapter verifies Firebase tokens and reads Firestore. Keeping this
 // handler independent lets local tests exercise the real validation/send flow.
-export function createEmailHandler({ allowedOrigins, authenticate, getProfile, getRegistration, deliver, reserveSend, finishSend }) {
+export function createEmailHandler({ allowedOrigins, authenticate, getProfile, getRegistration, deliver, reserveSend, finishSend, reserveBatch }) {
   return async function handle(request) {
     const origin = request.headers.get('origin')
     const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', Vary: 'Origin' }
@@ -84,7 +132,12 @@ export function createEmailHandler({ allowedOrigins, authenticate, getProfile, g
       if (!actor?.uid || !emailPattern.test(actor.email || '')) throw new EmailError(401, 'Please sign in again.')
       const profile = await getProfile(actor.uid, bearer)
       if (profile?.role !== 'organiser') throw new EmailError(403, 'Only organisers can send activity emails.')
-      const input = validatePayload(await readLimitedJson(request))
+      const body = await readLimitedJson(request)
+      if (body && Object.hasOwn(body, 'recipients')) {
+        const batch = validateBatchPayload(body)
+        return reply(await processBatch(batch, actor, bearer, { getRegistration, reserveBatch, reserveSend, finishSend, deliver }))
+      }
+      const input = validatePayload(body)
       const registration = input.recipient === 'self' ? null : await getRegistration(input.recipient, bearer)
       const to = input.recipient === 'self' ? actor.email : registration?.email
       if (!emailPattern.test(to || '')) throw new EmailError(400, 'This participant no longer has a valid registration email.')

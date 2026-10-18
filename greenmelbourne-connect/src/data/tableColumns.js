@@ -21,7 +21,7 @@ export const activityColumns = [
 export const registrationColumns = [
   { key: 'fullName', label: 'Name' },
   { key: 'email', label: 'Email' },
-  { key: 'eventTitle', label: 'Activity', value: (row) => `${row.eventTitle || ''} ${row.reason || ''}`, sortValue: (row) => row.eventTitle },
+  { key: 'eventTitle', label: 'Activity', value: (row) => `${row.eventTitle || ''} ${row.reason || ''}`, exportValue: row => row.eventTitle, sortValue: (row) => row.eventTitle },
   { key: 'suburb', label: 'Suburb' },
   { key: 'status', label: 'Status', value: (row) => row.status || 'Waiting' },
   { key: 'createdAt', label: 'Registered', value: (row) => createdAtValue(row) == null ? 'Pending' : dateFormat.format(new Date(createdAtValue(row) * 1000)), sortValue: createdAtValue },

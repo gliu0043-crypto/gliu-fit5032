@@ -63,5 +63,5 @@ export function useDataTable(rows, columns, initialSort = {}) {
     page.value = 1
   }
 
-  return { search, filters, hasFilters, sortKey, sortDirection, page, pageCount, filteredRows, visibleRows, firstRow, lastRow, sortBy, goToPage, clearFilters }
+  return { search, filters, hasFilters, sortKey, sortDirection, page, pageCount, filteredRows, sortedRows, visibleRows, firstRow, lastRow, sortBy, goToPage, clearFilters }
 }

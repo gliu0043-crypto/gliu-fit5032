@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { createEmailDelivery, createEmailHandler, EmailError, validatePayload } from '../server/email-handler.js'
+import { createEmailDelivery, createEmailHandler, EmailError, validatePayload, validateBatchPayload } from '../server/email-handler.js'
 import { MAX_ATTACHMENT_BYTES } from '../shared/email.js'
 import { firebaseRest } from '../server/firebase-rest.js'
 
@@ -15,7 +15,7 @@ const request = (body = payload(), token = 'organiser', extra = {}) => new Reque
   method: 'POST', headers: { 'Content-Type': 'application/json', origin, ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body), ...extra,
 })
 function fixture(overrides = {}) {
-  const messages = [], ledger = new Map()
+  const messages = [], ledger = new Map(), batches = new Map()
   const handler = createEmailHandler({
     allowedOrigins: [origin],
     authenticate: async token => {
@@ -24,6 +24,11 @@ function fixture(overrides = {}) {
     },
     getProfile: async uid => ({ role: uid === 'organiser' ? 'organiser' : 'member' }),
     getRegistration: async id => id === 'registration-1' ? { email: 'participant@example.test' } : null,
+    reserveBatch: async (uid, id, batch) => {
+      const key = `${uid}/${id}`, fingerprint = JSON.stringify(batch)
+      if (batches.has(key) && batches.get(key) !== fingerprint) throw new EmailError(409, 'Batch changed.')
+      batches.set(key, fingerprint)
+    },
     reserveSend: async (uid, id, mail) => {
       const key = `${uid}/${id}`, fingerprint = JSON.stringify(mail)
       if (ledger.has(key)) {
@@ -210,4 +215,73 @@ test('Firebase verification binds verified identity to the configured project an
   assert(calls.at(-1).url.endsWith('/gmcUsers/organiser'))
   const disabled = firebaseRest({ projectId: 'demo-greenmelbourne', apiKey: 'demo-key', fetcher: async () => Response.json({ users: [{ localId: 'organiser', disabled: true }] }) })
   await assert.rejects(disabled.authenticate(token(claims)), EmailError)
+})
+
+const batchPayload = (extra = {}) => {
+  const { recipient, ...base } = payload()
+  return { ...base, recipients: ['self', 'registration-1'], ...extra }
+}
+test('batch permissions and validation cannot bypass single-mail protections', async () => {
+  const { handler, messages } = fixture()
+  for (const [token, code] of [[null, 401], ['member', 403], ['invalid', 401]]) assert.equal((await handler(request(batchPayload(), token))).status, code)
+  for (const recipients of [[], Array(11).fill('self'), ['external@example.com'], ['../users'], [42]]) assert.throws(() => validateBatchPayload(batchPayload({ recipients })), EmailError)
+  assert.throws(() => validateBatchPayload(batchPayload({ role: 'organiser' })), EmailError)
+  assert.equal((await handler(request(batchPayload({ recipients: ['self', 'missing'] })))).status, 400)
+  assert.equal(messages.length, 0, 'all recipients must resolve before any delivery')
+})
+test('batch delivers individually, deduplicates trusted addresses, preserves attachment and replays once', async () => {
+  const { handler, messages } = fixture({ getRegistration: async () => ({ email: 'PARTICIPANT@example.test' }) })
+  const input = batchPayload({ recipients: ['registration-2', 'self', 'registration-1'] })
+  const first = await (await handler(request(input))).json()
+  assert.equal(first.status, 'batch-complete')
+  assert.equal(first.results.length, 2)
+  assert.equal(first.duplicateCount, 1)
+  assert.equal(messages.length, 2)
+  assert.deepEqual(messages.map(mail => mail.to).sort(), ['organiser@example.test', 'participant@example.test'])
+  for (const mail of messages) {
+    assert.equal(typeof mail.to, 'string')
+    assert(!mail.bcc && !mail.cc)
+    assert.deepEqual(Buffer.from(mail.attachment.content, 'base64'), text)
+  }
+  assert.deepEqual(await (await handler(request(input))).json(), first)
+  assert.equal(messages.length, 2)
+  assert.equal((await handler(request({ ...input, subject: 'Changed batch' }))).status, 409)
+  assert.equal((await handler(request({ ...input, recipients: ['self'] }))).status, 409)
+  assert.equal(messages.length, 2)
+})
+test('a partial batch keeps accepted results and never resends an uncertain recipient', async () => {
+  const delivered = []
+  const { handler } = fixture({ deliver: async mail => {
+    delivered.push(mail.to)
+    if (mail.to.startsWith('organiser')) throw new Error('private-provider-details')
+    return { status: 'accepted' }
+  } })
+  const first = await (await handler(request(batchPayload()))).json()
+  assert.deepEqual(first.results.map(row => row.status), ['accepted', 'unconfirmed'])
+  const second = await (await handler(request(batchPayload()))).json()
+  assert.deepEqual(second.results.map(row => row.status), ['accepted', 'unconfirmed'])
+  assert.equal(delivered.length, 2)
+  assert(!JSON.stringify(second).includes('private-provider-details'))
+})
+test('rate-limited batch pauses remaining recipients and can resume the same batch later', async () => {
+  let limited = true
+  const ledger = new Map(), sends = []
+  const { handler } = fixture({
+    reserveSend: async (uid, id) => {
+      if (ledger.has(id)) return ledger.get(id)
+      if (limited) throw new EmailError(429, 'Hourly email limit reached.')
+      const entry = { key: id }; ledger.set(id, entry); return entry
+    },
+    finishSend: async (entry, result) => { entry.result = result },
+    deliver: async mail => { sends.push(mail.to); return { status: 'simulated' } },
+  })
+  const paused = await (await handler(request(batchPayload()))).json()
+  assert(paused.results.every(row => row.status === 'not-sent'))
+  assert.equal(sends.length, 0)
+  limited = false
+  const resumed = await (await handler(request(batchPayload()))).json()
+  assert(resumed.results.every(row => row.status === 'simulated'))
+  assert.equal(sends.length, 2)
+  await handler(request(batchPayload()))
+  assert.equal(sends.length, 2)
 })

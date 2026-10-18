@@ -4,6 +4,63 @@ Vue 3 + Composition API application for a Melbourne environmental not-for-profit
 
 Live site: https://greenmelbourne-connect-801602918282.web.app
 
+## 18 October upgrade — BR E.3, E.4 and two F.1 features
+
+Implemented with Codex assistance at the project owner's request. This records assistance honestly; it does not establish permission under the unit's GenAI rules or guarantee a grade. The selected F scope is **interactive charts** and **bulk email**, not four innovations. The existing organiser page and the two chart types are not counted as additional F features.
+
+**Status:** implementation, production build and local verification complete. Firebase Hosting and `gmcSendActivityEmail` were updated successfully on 18 October 2026 at the existing URL. No real email was sent during automated verification. The owner reported successful guided acceptance, including real two-recipient bulk-email receipt and readable attachments, on 18 October 2026. The owner authorised the Git commit and push on 18 October 2026. Commit title: `Add accessibility, data exports, interactive charts and bulk email`.
+
+### Accessibility (E.3)
+
+- A keyboard-visible skip link bypasses navigation. Route changes move focus to the new page heading and update the document title. Mobile navigation reports its open state and Escape returns focus to its toggle.
+- Visible focus outlines, stronger form borders/text contrast, reduced-motion support and reflow at 320 CSS pixels.
+- Form errors are associated with their inputs via `aria-describedby` and `aria-invalid`; invalid submissions focus the first invalid control. Login/register use labelled toggle buttons instead of incomplete tab semantics.
+- Map destination selection and route metrics are available as labelled controls and text outside the map. Charts expose exact values in an HTML table and have equivalent keyboard controls.
+- Automated axe-core checks use WCAG 2.0/2.1 A and AA tags across 14 page/form states, alongside keyboard actions, route focus, member access restrictions and a 320-pixel viewport. Zero detected violations on these checks is **not a full WCAG conformance certification**. The owner's keyboard and approximately 200% zoom checks are recorded below; comprehensive screen-reader testing remains outside the completed coverage.
+
+### Data export (E.4)
+
+Both organiser tables have **Export CSV** and **Export PDF**. They export every matching row across all pages, in the current sort order, using explicitly selected display columns. Internal IDs and action controls are excluded; registration reasons are not added to the Activity export column. Empty/loading/error states disable export. CSV uses UTF-8 with a BOM, correct quote escaping and formula-prefix neutralisation. PDFs have repeated headers, wrapped cells, page numbers and an embedded open-source font for English/Simplified Chinese. The roughly 10 MB font is loaded only when PDF export is requested; uncommon characters outside its coverage are not promised.
+
+PDFs are generated locally using jsPDF + AutoTable; no participant data is sent to a PDF service. The bundled font is Noto Sans SC from Google's fonts repository, instantiated at weight 400 with FontTools; its SIL Open Font License is included at `public/fonts/OFL.txt`. Source: https://github.com/google/fonts/tree/main/ofl/notosanssc . CSV and the on-screen table remain available as textual alternatives; PDF/UA tagging is not claimed.
+
+### Interactive charts (F.1 feature 1)
+
+**Activity insights** shows registration counts by activity and Waiting/Contacted totals using Chart.js. Filter by activity type, activity suburb, individual activity and status; click bars or doughnut segments to filter, or use the equivalent selectors/buttons. Reset restores all data. An expandable HTML table exposes exact figures and keyboard focus buttons. Counts reflect registration records (expressions of interest), not unique participants or confirmed reservations. Activities with no registrations have zero counts. The data comes from existing Firestore subscriptions; demo chart statistics are not fabricated in production.
+
+### Bulk email (F.1 feature 2)
+
+The organiser can filter registrations, select up to 10 recipients (including My email), compose once, attach one file and review the exact recipients before confirming. Each unique address receives a **separate** message, so recipients do not see each other's addresses. Server-side validation re-resolves registration addresses, checks organiser permissions and validates attachment bytes before delivery.
+
+The existing endpoint now accepts a `recipients` array for a batch. `gmcEmailBatches` stores only an immutable manifest fingerprint; `gmcEmailRequests` stores per-address attempt/outcome records. Both are inaccessible to browser clients. Deterministic per-batch/per-address request identifiers reuse successful outcomes and block automatic repeats of uncertain attempts, including after a function restart. A changed batch cannot reuse its identifier. The existing limit remains 20 email attempts per organiser per hour shared with single emails. A provider/rate error pauses later recipients and returns individual outcomes; **Resume / check this batch** can continue recipients never attempted without resending accepted/uncertain ones. Provider acceptance is not proof of inbox delivery.
+
+The Cloud Function timeout is 360 seconds for sequential batches, while retaining one maximum instance and one concurrent request. Keep the page open while processing. Local `email:dev` only simulates sending and its ledger resets when stopped; production uses durable Firestore records. Existing Gmail OAuth testing-mode expiry still applies. A live check must use two owner-approved inboxes and inspect attachments; automated testing does not replace this.
+
+### Verification and guided acceptance
+
+- 42 unit tests: tables (8), maps (8), email including batches (17), Gmail OAuth (6), export/statistics (3).
+- 15 emulator integration tests: Firestore rules (8), authentication (1), durable mail store including batch manifests (6).
+- 6 browser scenarios, including 14 axe-core scans, actual CSV/PDF downloads, filter/empty-state charts, two-recipient simulated delivery, member registration/rating and 320px navigation.
+- Exported PDFs were rendered and visually inspected: 12 filtered activity rows, 23 registration rows over two pages, and 65 English/Chinese rows over four pages.
+- Deployment checks: the hosted index matches the tested production build, the downloaded PDF font exactly matches the local file, all 30 production activities load, CORS preflight returns 204 and an unauthenticated email request returns 401. Four additional guest-page axe scans (home, activities, invalid login and 320px home) detected no violations; live skip-link, route-heading focus and invalid-field focus checks passed. Subsequent owner-reported production acceptance is recorded below.
+
+Run `npm test` for unit/integration checks. Run `npm run test:acceptance` for emulator integration plus Chrome browser checks (requires Google Chrome installed). These tests use only `demo-greenmelbourne` on localhost. `seed:tables` resets disposable local Firestore data to 23 activities/registrations; it cannot write to production.
+
+### Owner-reported manual acceptance — 18 October 2026
+
+The owner replied with success after each guided test. These are user-reported results; the assistant did not independently inspect the private inboxes or send the messages.
+
+- E.3 basic accessibility: blank-login errors and first-invalid-field focus, Tab/Shift+Tab navigation with visible focus, the skip-to-content link, and readable/usable layout at approximately 200% zoom.
+- Existing-flow checks: member login persists after refresh; members cannot enter the organiser page; activity registrations persist after refresh; ratings save and updates retain the same rating count; the organiser can find the member's registration; activity-table pagination shows 30 records over three pages.
+- E.4 CSV: all 30 activity records export across pages; a suburb-filtered export contains only the matching records with the expected count.
+- E.4 PDF: activity and registration exports open, match the table data, and have readable text, headings and pagination without reported clipping or garbled characters.
+- F.1 interactive charts: activity selection, reset, clicking a populated bar, and Waiting/Contacted filtering keep charts and totals consistent, including empty results.
+- F.1 bulk email: the owner reviewed two distinct owner-controlled recipients, the subject/body and the sample TXT attachment, then performed the send. They reported success for the requested checks: both recipient results accepted, both inboxes received the email, attachments opened correctly, and each email exposed only its own recipient address.
+
+The live batch check covered two recipients and the sample TXT file. The 10-recipient limit and retry/idempotency behavior have automated coverage; they were not separately exercised by sending another live batch. Full WCAG conformance is not established by this guided acceptance. Before the authorised Git commit, all 57 unit and emulator integration tests and the production build passed again on 18 October 2026.
+
+Implementation references: [W3C WCAG 2.1 understanding](https://www.w3.org/WAI/WCAG21/understanding/), [Chart.js interactions](https://www.chartjs.org/docs/latest/configuration/interactions.html), [jsPDF](https://github.com/parallax/jsPDF).
+
 ## Day one implementation
 
 - Firebase Authentication email/password registration, sign-in, sign-out and restored sessions.
@@ -47,7 +104,7 @@ npm run dev:emulator
 
 After the emulators start, run `npm run seed:tables` and sign into `http://127.0.0.1:5178` using the local organiser credentials documented below. The email panel is below the registration table. Download `activity-info-example.txt` from its sample-attachment link, select it, and submit. A successful response explicitly states **No real email was sent**. Local sending is simulated even if unrelated provider credentials exist in the shell environment. Its in-memory duplicate-request guard and hourly attempt limit reset when the local server stops; the Firebase adapter uses the durable Firestore equivalents above. Do not deploy the local HTTP server as a substitute for a cloud function.
 
-`npm run test:email` runs 13 tests covering role restrictions, trusted recipients, attachment integrity, request limits, duplicate request handling, provider failures and all three provider request formats. `npm run test:gmail-oauth` runs 6 local callback tests with simulated Google responses, checking OAuth state/PKCE, minimal scopes, credential file permissions, school addresses, rejected consent/account cases and safe diagnostic errors. Neither suite sends real email. Browser checks covered missing-attachment validation, file selection, self and participant recipients, successful simulation and prevention of accidental double-click submission. The hosted organiser page now includes the email composer; the existing authentication and table features remain available.
+`npm run test:email` now runs 17 tests covering role restrictions, trusted recipients, attachment integrity, request limits, duplicate request handling, provider failures, all three provider request formats and batch validation/deduplication/resume behavior. `npm run test:gmail-oauth` runs 6 local callback tests with simulated Google responses, checking OAuth state/PKCE, minimal scopes, credential file permissions, school addresses, rejected consent/account cases and safe diagnostic errors. Neither suite sends real email. Browser checks covered missing-attachment validation, file selection, self and participant recipients, successful simulation and prevention of accidental double-click submission. The hosted organiser page now includes the email composer; the existing authentication and table features remain available.
 
 Cloud-adapter verification on 13 October 2026: the Firebase entry point loaded successfully; all 32 automated tests passed (8 table, 10 email, 8 security rules, 1 authentication integration and 5 Firestore mail-store integration tests). The mail-store tests use only local emulators and cover concurrent duplicate requests, persistence across handler instances, changed replays, uncertain delivery and hourly limit expiry. This does not replace deployed-function and real inbox acceptance testing.
 

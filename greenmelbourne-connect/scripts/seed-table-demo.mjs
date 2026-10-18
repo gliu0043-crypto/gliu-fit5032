@@ -23,6 +23,8 @@ try {
   env = await initializeTestEnvironment({ projectId, firestore: {
     host: '127.0.0.1', port: 8188, rules: readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8'),
   } })
+  // Reset disposable LOCAL data so other emulator tests cannot affect the UI fixture.
+  await env.clearFirestore()
   await env.withSecurityRulesDisabled(async (context) => {
     const db = context.firestore()
     const batch = writeBatch(db)

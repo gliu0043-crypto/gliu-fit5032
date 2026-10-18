@@ -8,9 +8,15 @@ import { firebaseRest } from '../server/firebase-rest.js'
 
 const ledger = new Map()
 const recent = new Map()
+const batches = new Map()
 const handler = createEmailHandler({
   allowedOrigins: ['http://127.0.0.1:5178', 'http://localhost:5178'],
   ...firebaseRest({ projectId: 'demo-greenmelbourne', apiKey: 'demo-key', authOrigin: 'http://127.0.0.1:9199/identitytoolkit.googleapis.com', firestoreOrigin: 'http://127.0.0.1:8188' }),
+  reserveBatch: async (uid, id, batch) => {
+    const key = `${uid}/${id}`, fingerprint = createHash('sha256').update(JSON.stringify(batch)).digest('hex')
+    if (batches.has(key) && batches.get(key) !== fingerprint) throw new EmailError(409, 'This batch has changed. Prepare a new batch.')
+    batches.set(key, fingerprint)
+  },
   reserveSend: async (uid, requestId, mail) => {
     const key = `${uid}/${requestId}`
     const fingerprint = createHash('sha256').update(JSON.stringify(mail)).digest('hex')
@@ -33,6 +39,7 @@ const handler = createEmailHandler({
 })
 
 const server = createServer(async (req, res) => {
+  if (req.url === '/health') { res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ status: 'local-simulation' })); return }
   if (req.url !== '/send') { res.writeHead(404).end(); return }
   try {
     const request = new Request('http://127.0.0.1:8787/send', { method: req.method, headers: req.headers,
